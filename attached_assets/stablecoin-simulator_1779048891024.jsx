@@ -8,10 +8,7 @@ const T = {
 
 // ── Reusable Components ─────────────────────────────────────────────────────
 
-function Btn({ label, onClick, color, outline, disabled, full = true }: {
-  label: string; onClick?: () => void; color?: string; outline?: boolean;
-  disabled?: boolean; full?: boolean;
-}) {
+function Btn({ label, onClick, color, outline, disabled, full = true }) {
   const c = color || T.teal;
   const bg = disabled ? T.muted : outline ? "transparent" : c;
   const fg = disabled ? T.dim : outline ? c : c === T.red || c === T.blue || c === T.purple ? "#fff" : "#061018";
@@ -25,10 +22,7 @@ function Btn({ label, onClick, color, outline, disabled, full = true }: {
   );
 }
 
-function Field({ label, value, onChange, placeholder, error, mono, type = "text", readOnly }: {
-  label?: string; value: string; onChange?: (v: string) => void; placeholder?: string;
-  error?: string; mono?: boolean; type?: string; readOnly?: boolean;
-}) {
+function Field({ label, value, onChange, placeholder, error, mono, type = "text", readOnly }) {
   return (
     <div style={{ marginBottom: 14 }}>
       {label && <div style={{ fontSize: 10, color: T.dim, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 5 }}>{label}</div>}
@@ -45,11 +39,11 @@ function Field({ label, value, onChange, placeholder, error, mono, type = "text"
   );
 }
 
-function Badge({ label, color = T.teal }: { label: string; color?: string }) {
+function Badge({ label, color = T.teal }) {
   return <span style={{ background: color + "22", color, padding: "3px 9px", borderRadius: 20, fontSize: 10, fontWeight: 700, letterSpacing: 0.3, display: "inline-block" }}>{label}</span>;
 }
 
-function FRow({ label, value, vColor, mono }: { label: string; value: string; vColor?: string; mono?: boolean }) {
+function FRow({ label, value, vColor, mono }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${T.border}` }}>
       <span style={{ fontSize: 12, color: T.dim }}>{label}</span>
@@ -58,12 +52,12 @@ function FRow({ label, value, vColor, mono }: { label: string; value: string; vC
   );
 }
 
-function Alert({ type = "info", text }: { type?: "info" | "warn" | "err" | "ok"; text: string }) {
+function Alert({ type = "info", text }) {
   const c = { info: T.blue, warn: T.amber, err: T.red, ok: T.green }[type] || T.blue;
   return <div style={{ background: c + "15", border: `1px solid ${c}40`, borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 12, color: c, lineHeight: 1.7 }}>{text}</div>;
 }
 
-function SecHead({ icon, title }: { icon: string; title: string }) {
+function SecHead({ icon, title }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
       <span style={{ fontSize: 18 }}>{icon}</span>
@@ -140,7 +134,7 @@ const INFRA = [
       { color: T.blue, label: "JWT Session Token", text: "A JSON Web Token is issued as your session passport. It expires after 24 hours of inactivity. Refresh tokens rotate on every use." },
       { color: T.dim, label: "OTP Verification", text: "An SMS OTP is dispatched via Termii or Twilio. Until verified, the account cannot initiate or receive any transactions." },
     ],
-    note: { type: "info" as const, text: "Your blockchain wallet does not exist yet. It is generated only after KYC clearance — preventing unverified accounts from ever holding or receiving funds." },
+    note: { type: "info", text: "Your blockchain wallet does not exist yet. It is generated only after KYC clearance — preventing unverified accounts from ever holding or receiving funds." },
   },
   {
     title: "The Compliance Engine", badge: "KYC / AML Layer",
@@ -151,7 +145,7 @@ const INFRA = [
       { color: T.green, label: "Liveness Check", text: "Your selfie is compared to your ID photo using facial biometric AI. A liveness check confirms you are physically present — prevents photo spoofing attacks." },
       { color: T.red, label: "Sanctions Screening", text: "You are screened against OFAC (US), UN Security Council, EU, and UK HMT sanctions lists simultaneously. This is legally mandatory — no exceptions for any user." },
     ],
-    note: { type: "warn" as const, text: "Tier System (Quidax Model): Tier 1 (BVN + selfie) = ₦500k/day limit. Tier 2 (+ NIN/ID) = ₦2M/day. Tier 3 (+ proof of address) = Unlimited daily. Higher tier = higher USDT withdrawal limits." },
+    note: { type: "warn", text: "Tier System (Quidax Model): Tier 1 (BVN + selfie) = ₦500k/day limit. Tier 2 (+ NIN/ID) = ₦2M/day. Tier 3 (+ proof of address) = Unlimited daily. Higher tier = higher USDT withdrawal limits." },
   },
   {
     title: "Cryptographic Wallet Generation", badge: "Blockchain Layer",
@@ -162,7 +156,7 @@ const INFRA = [
       { color: T.blue, label: "Multi-Network Addresses", text: "Each blockchain derives a separate deposit address. TRON, Ethereum, Solana = 3 different mailboxes for the same user account, all linked to your UUID." },
       { color: T.red, label: "Network Mismatch Risk", text: "TRON (TRC-20) and Ethereum (ERC-20) addresses look similar but are completely incompatible networks. Sending to the wrong one = permanent, unrecoverable loss of funds." },
     ],
-    note: { type: "warn" as const, text: "Custodial (Quidax, Binance, RoyalPay): Platform holds your key — recoverable if you forget your password. Non-Custodial (MetaMask, Trust Wallet): YOU hold the key. Lose your seed phrase = lose all funds, forever. No exceptions." },
+    note: { type: "warn", text: "Custodial (Quidax, Binance, NovaPay): Platform holds your key — recoverable if you forget your password. Non-Custodial (MetaMask, Trust Wallet): YOU hold the key. Lose your seed phrase = lose all funds, forever. No exceptions." },
   },
   {
     title: "Fiat On-Ramp Engine", badge: "Payment Processing Layer",
@@ -173,7 +167,7 @@ const INFRA = [
       { color: T.blue, label: "Liquidity Pool", text: "The platform does NOT go to Binance for every transaction. It maintains an internal USDT pool and rebalances in bulk overnight — enabling instant credit without a blockchain TX per trade." },
       { color: T.green, label: "Ledger Credit", text: "Your account is credited '+50 USDT' in the platform's database. This is a ledger entry — no on-chain transaction has happened for your specific wallet yet." },
     ],
-    note: { type: "info" as const, text: "Rate Lock: The NGN/USDT rate is frozen at the moment you initiate the transfer. You are protected from price movement during the 2-5 minutes your bank transfer takes to clear." },
+    note: { type: "info", text: "Rate Lock: The NGN/USDT rate is frozen at the moment you initiate the transfer. You are protected from price movement during the 2-5 minutes your bank transfer takes to clear." },
   },
   {
     title: "One Rail, Five Use Cases", badge: "Infrastructure Insight",
@@ -185,7 +179,7 @@ const INFRA = [
       { color: T.red, label: "Remittance", text: "$400B+ flows to developing markets annually. Stablecoins undercut traditional remittance services (Western Union, MoneyGram) by 80-95% on total fees." },
       { color: T.amber, label: "P2P", text: "Growing in Nigeria as bank transfer downtimes push users toward crypto for everyday payments. Settlement is instant and final — no pending, no reversals." },
     ],
-    note: { type: "info" as const, text: "For businesses: platforms like Quidax offer a B2B stablecoin API. Your fintech product can integrate stablecoin payment rails without building any blockchain infrastructure yourself." },
+    note: { type: "info", text: "For businesses: platforms like Quidax offer a B2B stablecoin API. Your fintech product can integrate stablecoin payment rails without building any blockchain infrastructure yourself." },
   },
   {
     title: "Blockchain Transfer: The Rails", badge: "On-Chain Layer",
@@ -196,7 +190,7 @@ const INFRA = [
       { color: T.teal, label: "Transaction Signing", text: "The platform's HSM signs the raw transaction with your wallet's private key. The signed transaction is then broadcast simultaneously to hundreds of network nodes." },
       { color: T.blue, label: "Transaction Hash", text: "Once a validator confirms the block, a unique TxHash is generated — your permanent, immutable, publicly verifiable receipt on the blockchain. It never changes." },
     ],
-    note: { type: "err" as const, text: "⚠ The #1 User Error: Sending TRC-20 USDT to an Ethereum (ERC-20) address = permanent, unrecoverable loss. Addresses look similar but the networks are completely incompatible. ALWAYS match the network to the address format before confirming." },
+    note: { type: "err", text: "⚠ The #1 User Error: Sending TRC-20 USDT to an Ethereum (ERC-20) address = permanent, unrecoverable loss. Addresses look similar but the networks are completely incompatible. ALWAYS match the network to the address format before confirming." },
   },
   {
     title: "Off-Ramp & NIBSS Settlement", badge: "Fiat Settlement Layer",
@@ -207,7 +201,7 @@ const INFRA = [
       { color: T.green, label: "Settlement Speed", text: "NIBSS NIP clears in under 5 minutes, 24 hours a day, 7 days a week, 365 days a year — including Sundays and public holidays. No correspondent banks needed." },
       { color: T.blue, label: "Zero FX Risk", text: "The recipient bank credits the account in Naira. The full crypto-to-fiat conversion happened inside the platform treasury — zero FX exposure for the end user." },
     ],
-    note: { type: "info" as const, text: "SWIFT vs NIBSS: SWIFT = 2-5 correspondent banks, $25-50 cost, 1-3 business days, weekdays only. NIBSS NIP = ₦50 flat, under 5 minutes, 24/7/365. Same money. Completely different infrastructure." },
+    note: { type: "info", text: "SWIFT vs NIBSS: SWIFT = 2-5 correspondent banks, $25-50 cost, 1-3 business days, weekdays only. NIBSS NIP = ₦50 flat, under 5 minutes, 24/7/365. Same money. Completely different infrastructure." },
   },
   {
     title: "The Immutable Audit Trail", badge: "Transparency Layer",
@@ -218,7 +212,7 @@ const INFRA = [
       { color: T.red, label: "Freeze Capability", text: "Tether (USDT issuer) can globally freeze any wallet. In 2024-25, Tether froze over $1.5 billion across 2,000+ blacklisted addresses on Ethereum and TRON alone." },
       { color: T.blue, label: "Transaction Monitoring", text: "AI-powered TM systems run 24/7 — flagging unusual patterns and automatically filing Suspicious Activity Reports (SARs) with the CBN and NFIU when thresholds are breached." },
     ],
-    note: { type: "warn" as const, text: "Transparency Paradox: Stablecoins are MORE transparent for regulators than traditional banking — every on-chain move is on a permanent public ledger. The blockchain never forgets and cannot be edited. This is what makes compliance both essential and enforceable." },
+    note: { type: "warn", text: "Transparency Paradox: Stablecoins are MORE transparent for regulators than traditional banking — every on-chain move is on a permanent public ledger. The blockchain never forgets and cannot be edited. This is what makes compliance both essential and enforceable." },
   },
   {
     title: "Traditional Rails vs Stablecoin Rails", badge: "Final Verdict",
@@ -229,13 +223,13 @@ const INFRA = [
       { color: T.amber, label: "Availability", text: "SWIFT: weekdays, banking hours, excludes public holidays. Stablecoin: 24 hours a day, 7 days a week, 365 days a year — no scheduled downtime, no cutoff times." },
       { color: T.blue, label: "Intermediaries", text: "SWIFT: 2-5 correspondent banks, each adding time, cost, and counterparty risk. Stablecoin: Sender to blockchain to recipient. Zero intermediaries." },
     ],
-    note: { type: "ok" as const, text: "Regulation is converging: US GENIUS Act (2025), EU MiCA, Nigeria CBN VASP licensing — stablecoin infrastructure is now as regulated as traditional banking, but without the legacy inefficiencies built over 50 years." },
+    note: { type: "ok", text: "Regulation is converging: US GENIUS Act (2025), EU MiCA, Nigeria CBN VASP licensing — stablecoin infrastructure is now as regulated as traditional banking, but without the legacy inefficiencies built over 50 years." },
   },
 ];
 
 // ── Phone Frame ──────────────────────────────────────────────────────────────
 
-function PhoneFrame({ children, phase, total }: { children: React.ReactNode; phase: number; total: number }) {
+function PhoneFrame({ children, phase, total }) {
   const labels = ["Welcome","Sign Up","KYC","Wallet","Buy USDT","Use Cases","Transfer","Off-Ramp","History","Compare"];
   return (
     <div style={{
@@ -251,18 +245,18 @@ function PhoneFrame({ children, phase, total }: { children: React.ReactNode; pha
           <span>●●●●</span><span>WiFi</span><span>🔋</span>
         </div>
       </div>
-      {/* URL bar */}
+      {/* URL bar — web app */}
       <div style={{ padding: "4px 16px 8px", background: "#07101C" }}>
         <div style={{ background: T.card, borderRadius: 8, padding: "5px 11px", display: "flex", alignItems: "center", gap: 6, border: `1px solid ${T.border}` }}>
           <span style={{ fontSize: 10, color: T.green }}>🔒</span>
-          <span style={{ fontSize: 10, color: T.dim }}>royalpay.app</span>
+          <span style={{ fontSize: 10, color: T.dim }}>novapay.app</span>
           <span style={{ fontSize: 10, color: T.muted, marginLeft: "auto" }}>⟳</span>
         </div>
       </div>
       {/* App header */}
       <div style={{ display: "flex", alignItems: "center", padding: "8px 16px", borderBottom: `1px solid ${T.border}`, gap: 8 }}>
-        <div style={{ width: 26, height: 26, borderRadius: 7, background: `linear-gradient(135deg, ${T.teal}, #007A8F)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0 }}>♛</div>
-        <span style={{ fontSize: 15, fontWeight: 800, color: T.txt, flex: 1, letterSpacing: -0.3 }}>RoyalPay</span>
+        <div style={{ width: 26, height: 26, borderRadius: 7, background: `linear-gradient(135deg, ${T.teal}, #007A8F)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0 }}>💎</div>
+        <span style={{ fontSize: 15, fontWeight: 800, color: T.txt, flex: 1, letterSpacing: -0.3 }}>NovaPay</span>
         <Badge label={labels[Math.min(phase, labels.length - 1)]} color={T.teal} />
       </div>
       {/* Phase progress bar */}
@@ -281,9 +275,9 @@ function PhoneFrame({ children, phase, total }: { children: React.ReactNode; pha
 
 // ── Infra Panel ──────────────────────────────────────────────────────────────
 
-function InfraPanel({ data }: { data: typeof INFRA[0] | null }) {
+function InfraPanel({ data }) {
   if (!data) return null;
-  const alertC: Record<string, string> = { info: T.blue, warn: T.amber, err: T.red, ok: T.green };
+  const alertC = { info: T.blue, warn: T.amber, err: T.red, ok: T.green };
   return (
     <div style={{ flex: 1, minWidth: 260, paddingLeft: 28, display: "flex", flexDirection: "column" }}>
       <div style={{ marginBottom: 8 }}><Badge label={data.badge} color={T.teal} /></div>
@@ -308,11 +302,11 @@ function InfraPanel({ data }: { data: typeof INFRA[0] | null }) {
 
 // ── Phase 0: Welcome ─────────────────────────────────────────────────────────
 
-function Welcome({ next }: { next: () => void }) {
+function Welcome({ next }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", textAlign: "center" }}>
-      <div style={{ fontSize: 38, marginBottom: 10 }}>♛</div>
-      <div style={{ fontSize: 21, fontWeight: 800, letterSpacing: -0.5, marginBottom: 2 }}>RoyalPay</div>
+      <div style={{ fontSize: 38, marginBottom: 10 }}>💎</div>
+      <div style={{ fontSize: 21, fontWeight: 800, letterSpacing: -0.5, marginBottom: 2 }}>NovaPay</div>
       <div style={{ fontSize: 9, color: T.teal, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", marginBottom: 16 }}>Stablecoin Simulator</div>
       <p style={{ fontSize: 12, color: T.dim, lineHeight: 1.7, marginBottom: 18 }}>
         Experience the complete end-to-end lifecycle of a stablecoin — from web sign-up to cross-border settlement. No downloads. Runs in your browser.
@@ -330,9 +324,9 @@ function Welcome({ next }: { next: () => void }) {
   );
 }
 
-// ── Phase 1: Sign Up ─────────────────────────────────────────────────────────
+// ── Phase 1: Sign Up (Web App) ───────────────────────────────────────────────
 
-function SignUp({ next }: { next: () => void }) {
+function SignUp({ next }) {
   const [email, setEmail] = useState("amaka.okonkwo@gmail.com");
   const [phone, setPhone] = useState("+234 812 345 6789");
   const [pass, setPass] = useState("");
@@ -365,7 +359,7 @@ function SignUp({ next }: { next: () => void }) {
       <SecHead icon="🌐" title="Create Your Account" />
       <div style={{ background: T.card, borderRadius: 10, padding: "8px 12px", marginBottom: 14, display: "flex", alignItems: "center", gap: 6, border: `1px solid ${T.border}` }}>
         <span style={{ fontSize: 10, color: T.green }}>🔒</span>
-        <span style={{ fontSize: 10, color: T.dim }}>royalpay.app — No download required. Runs in your browser.</span>
+        <span style={{ fontSize: 10, color: T.dim }}>novapay.app — No download required. Runs in your browser.</span>
       </div>
       <Field label="Email Address" value={email} onChange={setEmail} placeholder="you@email.com" type="email" />
       <Field label="Phone Number" value={phone} onChange={setPhone} placeholder="+234 8XX XXX XXXX" />
@@ -379,7 +373,7 @@ function SignUp({ next }: { next: () => void }) {
 
 // ── Phase 2: KYC ────────────────────────────────────────────────────────────
 
-function KYC({ next }: { next: () => void }) {
+function KYC({ next }) {
   const [step, setStep] = useState(0);
   const [verifying, setVerifying] = useState(false);
   const [bvn, setBvn] = useState("22012345678");
@@ -435,8 +429,8 @@ function KYC({ next }: { next: () => void }) {
 
 // ── Phase 3: Wallet Generated ─────────────────────────────────────────────────
 
-function WalletGen({ next }: { next: () => void }) {
-  const [copied, setCopied] = useState<string | null>(null);
+function WalletGen({ next }) {
+  const [copied, setCopied] = useState(null);
   const wallets = [
     { net: "TRON", token: "TRC-20", addr: "TQtfwq4nVjfXFqKLBYqmFAE5PbhBKUiVrx", color: T.red, badge: "Cheapest Fees" },
     { net: "Ethereum", token: "ERC-20", addr: "0x8a3D5F6c9E7b2A1d4C0F8e3B6A2D9E5", color: T.blue, badge: "Most Liquid" },
@@ -474,7 +468,7 @@ function WalletGen({ next }: { next: () => void }) {
 
 // ── Phase 4: Buy USDT ────────────────────────────────────────────────────────
 
-function BuyUSDT({ next }: { next: () => void }) {
+function BuyUSDT({ next }) {
   const [ngn, setNgn] = useState("83250");
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -487,7 +481,7 @@ function BuyUSDT({ next }: { next: () => void }) {
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", textAlign: "center" }}>
       <div style={{ fontSize: 38, marginBottom: 8 }}>💰</div>
       <div style={{ fontSize: 22, fontWeight: 800, color: T.teal, marginBottom: 2 }}>+{net} USDT</div>
-      <div style={{ fontSize: 12, color: T.dim, marginBottom: 20 }}>Credited to your RoyalPay wallet</div>
+      <div style={{ fontSize: 12, color: T.dim, marginBottom: 20 }}>Credited to your NovaPay wallet</div>
       <div style={{ width: "100%", marginBottom: 16 }}>
         <FRow label="NGN Paid" value={`₦${parseInt(ngn).toLocaleString()}`} />
         <FRow label="Exchange Rate" value={`₦${rate} = $1`} />
@@ -507,7 +501,7 @@ function BuyUSDT({ next }: { next: () => void }) {
       <div style={{ background: T.card, borderRadius: 12, padding: "14px", marginBottom: 14 }}>
         <FRow label="Bank Name" value="Providus Bank (via Paystack)" />
         <FRow label="Account Number" value="0012345678" mono />
-        <FRow label="Account Name" value="RoyalPay / Amaka Okonkwo" />
+        <FRow label="Account Name" value="NovaPay / Amaka Okonkwo" />
         <FRow label="Amount to Transfer" value={`₦${parseInt(ngn).toLocaleString()}`} vColor={T.teal} />
         <FRow label="You will receive" value={`${net} USDT`} vColor={T.green} />
       </div>
@@ -545,8 +539,8 @@ function BuyUSDT({ next }: { next: () => void }) {
 
 // ── Phase 5: Use Case Selector ────────────────────────────────────────────────
 
-function UseCaseSelector({ next, setUseCase }: { next: () => void; setUseCase: (uc: typeof USE_CASES[0]) => void }) {
-  const [hovered, setHovered] = useState<string | null>(null);
+function UseCaseSelector({ next, setUseCase }) {
+  const [hovered, setHovered] = useState(null);
   return (
     <div>
       <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 4 }}>Choose Your Scenario</div>
@@ -574,9 +568,9 @@ function UseCaseSelector({ next, setUseCase }: { next: () => void; setUseCase: (
 
 // ── Phase 6: Transfer ─────────────────────────────────────────────────────────
 
-function Transfer({ next, useCase }: { next: () => void; useCase: typeof USE_CASES[0] | null }) {
+function Transfer({ next, useCase }) {
   const uc = useCase || USE_CASES[0];
-  const [network, setNetwork] = useState<string | null>(null);
+  const [network, setNetwork] = useState(null);
   const [address, setAddress] = useState("");
   const [addrErr, setAddrErr] = useState("");
   const [step, setStep] = useState(0);
@@ -596,20 +590,20 @@ function Transfer({ next, useCase }: { next: () => void; useCase: typeof USE_CAS
     return () => clearInterval(iv);
   }, [step, network]);
 
-  const validateAddr = (addr: string) => {
+  const validateAddr = addr => {
     if (!addr || !network) return "";
     if (network === "TRON" && addr.startsWith("0x")) return "ERC-20 address pasted on TRON — funds will be permanently lost!";
     if (network === "ETH" && (addr.startsWith("T") && addr.length > 20)) return "TRC-20 address pasted on Ethereum — funds will be permanently lost!";
     return "";
   };
 
-  const sampleAddrs: Record<string, { ok: string; bad: string }> = {
+  const sampleAddrs = {
     TRON: { ok: "TQtfwqXm4nVjfXFqKLBYqmFAE5PbhBKUiVrx", bad: "0x8a3D5F6c9E7b2A1d4C0F8e3B6A2D9E5C1F7" },
     ETH: { ok: "0x8a3D5F6c9E7b2A1d4C0F8e3B6A2D9E5C1F7A3B0", bad: "TQtfwqXm4nVjfXFqKLBYqmFAE5PbhBKUiVrx" },
   };
 
-  const gasLabel: Record<string, string> = { TRON: "~1.00 USDT", ETH: "~$8.50 (variable)" };
-  const timeLabel: Record<string, string> = { TRON: "~2 minutes", ETH: "~12-15 minutes" };
+  const gasLabel = { TRON: "~1.00 USDT", ETH: "~$8.50 (variable)" };
+  const timeLabel = { TRON: "~2 minutes", ETH: "~12-15 minutes" };
 
   if (step === 4) return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", textAlign: "center" }}>
@@ -620,7 +614,7 @@ function Transfer({ next, useCase }: { next: () => void; useCase: typeof USE_CAS
         <FRow label="To" value={uc.recipient} />
         <FRow label="Location" value={uc.location} />
         <FRow label="Network" value={`${network} (${network === "TRON" ? "TRC-20" : "ERC-20"})`} vColor={T.teal} />
-        <FRow label="Gas Fee" value={gasLabel[network!]} vColor={T.amber} />
+        <FRow label="Gas Fee" value={gasLabel[network]} vColor={T.amber} />
         <FRow label="Status" value="Confirmed on-chain ✓" vColor={T.green} />
         <FRow label="TxHash" value={txHash.substring(0, 14) + "..."} mono vColor={T.teal} />
       </div>
@@ -641,7 +635,7 @@ function Transfer({ next, useCase }: { next: () => void; useCase: typeof USE_CAS
           <div style={{ width: `${pct}%`, background: T.teal, height: "100%", borderRadius: 4, transition: "width 0.05s" }} />
         </div>
         <div style={{ fontSize: 24, fontWeight: 800, color: T.teal, marginBottom: 4 }}>{countdown}s</div>
-        <div style={{ fontSize: 12, color: T.dim, marginBottom: 16 }}>Estimated: {timeLabel[network!]}</div>
+        <div style={{ fontSize: 12, color: T.dim, marginBottom: 16 }}>Estimated: {timeLabel[network]}</div>
         <div style={{ fontSize: 10, color: T.muted, fontFamily: '"Courier New", monospace' }}>TxHash: {txHash.substring(0, 22)}...</div>
       </div>
     );
@@ -657,8 +651,8 @@ function Transfer({ next, useCase }: { next: () => void; useCase: typeof USE_CAS
         <FRow label="To" value={uc.recipient} />
         <FRow label="Amount" value={`${uc.amount} USDT`} vColor={T.teal} />
         <FRow label="Network" value={`${network} · ${network === "TRON" ? "TRC-20" : "ERC-20"}`} />
-        <FRow label="Gas Fee" value={gasLabel[network!]} vColor={T.amber} />
-        <FRow label="Est. Time" value={timeLabel[network!]} vColor={T.green} />
+        <FRow label="Gas Fee" value={gasLabel[network]} vColor={T.amber} />
+        <FRow label="Est. Time" value={timeLabel[network]} vColor={T.green} />
       </div>
       <Alert type="warn" text="This transaction is irreversible. Verify recipient and network before confirming." />
       <Btn label={`Confirm — Send ${uc.amount} USDT`} onClick={() => setStep(3)} />
@@ -726,13 +720,13 @@ function Transfer({ next, useCase }: { next: () => void; useCase: typeof USE_CAS
 
 // ── Phase 7: Off-Ramp ─────────────────────────────────────────────────────────
 
-function OffRamp({ next }: { next: () => void }) {
+function OffRamp({ next }) {
   const [step, setStep] = useState(0);
   const [amount, setAmount] = useState("45");
   const [loading, setLoading] = useState(false);
   const rate = 1665;
-  const fee = (parseFloat(amount || "0") * 0.008).toFixed(2);
-  const netAmt = (parseFloat(amount || "0") - parseFloat(fee)).toFixed(2);
+  const fee = (parseFloat(amount || 0) * 0.008).toFixed(2);
+  const netAmt = (parseFloat(amount || 0) - parseFloat(fee)).toFixed(2);
   const netNGN = (parseFloat(netAmt) * rate).toFixed(0);
 
   if (step === 2) return (
@@ -792,13 +786,13 @@ function OffRamp({ next }: { next: () => void }) {
 
 // ── Phase 8: Transaction History ──────────────────────────────────────────────
 
-function TxHistory({ next }: { next: () => void }) {
+function TxHistory({ next }) {
   const [filter, setFilter] = useState("All");
   const txns = [
-    { type: "⬇ On-Ramp", desc: "Bought USDT via GTBank transfer", amount: "+50.00 USDT", sub: "₦83,250 debited", date: "Today, 09:14", status: "Confirmed", sColor: T.green, tag: "Off-chain", hash: null },
+    { type: "⬇ On-Ramp", desc: "Bought USDT via GTBank transfer", amount: "+50.00 USDT", sub: "₦83,250 debited", date: "Today, 09:14", status: "Confirmed", sColor: T.green, tag: "Off-chain" },
     { type: "📤 Transfer", desc: "Sent to DesignMaster Academy (E-commerce)", amount: "-50.00 USDT", sub: "TRC-20 · Tronscan", date: "Today, 09:22", status: "On-chain ✓", sColor: T.teal, tag: "On-chain", hash: "a4f2c9e7..." },
     { type: "💰 Received", desc: "Invoice from Pixel & Co. Agency (Freelance)", amount: "+200.00 USDT", sub: "ERC-20 · Etherscan", date: "Yesterday", status: "On-chain ✓", sColor: T.teal, tag: "On-chain", hash: "b7e3f1d0..." },
-    { type: "⬆ Off-Ramp", desc: "Cash out to GTBank 0123456789", amount: "-45.00 USDT", sub: "₦74,440 via NIBSS NIP", date: "Today, 10:05", status: "Settled", sColor: T.green, tag: "Off-chain", hash: null },
+    { type: "⬆ Off-Ramp", desc: "Cash out to GTBank 0123456789", amount: "-45.00 USDT", sub: "₦74,440 via NIBSS NIP", date: "Today, 10:05", status: "Settled", sColor: T.green, tag: "Off-chain" },
   ];
   const filtered = filter === "All" ? txns : txns.filter(t => t.tag === filter);
 
@@ -840,7 +834,7 @@ function TxHistory({ next }: { next: () => void }) {
 
 // ── Phase 9: Compare ──────────────────────────────────────────────────────────
 
-function Compare({ restart }: { restart: () => void }) {
+function Compare({ restart }) {
   const rows = [
     { label: "Speed", swift: "1-3 business days", stable: "~2 min (TRC-20)", win: true },
     { label: "Cost", swift: "$25-50 + 5-7% FX", stable: "~$1 flat fee", win: true },
@@ -887,7 +881,7 @@ function Compare({ restart }: { restart: () => void }) {
 
 export default function App() {
   const [phase, setPhase] = useState(0);
-  const [useCase, setUseCase] = useState<typeof USE_CASES[0] | null>(null);
+  const [useCase, setUseCase] = useState(null);
 
   const next = () => setPhase(p => Math.min(p + 1, 9));
   const restart = () => { setPhase(0); setUseCase(null); };
