@@ -1,0 +1,209 @@
+I am building a React web app called NovaPay — a stablecoin lifecycle simulator
+for fintech professionals. I need you to set up a PostgreSQL database (using
+Replit's built-in Neon database) and create the following tables exactly as
+specified. Each table has a clear purpose tied to product metrics I am tracking.
+Also create a simple Express.js backend with API endpoints for each table so
+my React frontend can write to the database. Use environment variables for all
+database credentials. Do not hardcode any secrets.
+Here are the 5 tables I need:
+════════════════════════════════════════════════════════════════════════════════
+TABLE 1: sessions
+PURPOSE: One row per visitor. This is the anchor for everything else.
+Tells me how many unique people visited, where they came from,
+and how far they got through the simulation overall.
+════════════════════════════════════════════════════════════════════════════════
+CREATE TABLE sessions (
+id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+session_token       TEXT UNIQUE NOT NULL,
+-- Where did this visitor come from?
+referrer_url        TEXT,          -- e.g. "https://linkedin.com/in/..."
+utm_source          TEXT,          -- e.g. "linkedin", "github", "twitter"
+utm_medium          TEXT,          -- e.g. "post", "bio", "readme"
+utm_campaign        TEXT,          -- e.g. "novapay_launch"
+-- What device/location are they on?
+country             TEXT,          -- e.g. "NG", "GB", "US"
+city                TEXT,          -- e.g. "Lagos", "London"
+device_type         TEXT,          -- "desktop", "mobile", "tablet"
+browser             TEXT,          -- e.g. "Chrome", "Safari"
+-- How far did they get?
+highest_phase       INTEGER DEFAULT 0,   -- 0-9 (9 = completed full simulation)
+simulation_complete BOOLEAN DEFAULT FALSE,
+total_time_seconds  INTEGER,             -- Total time from landing to last action
+-- When?
+started_at          TIMESTAMPTZ DEFAULT NOW(),
+last_active_at      TIMESTAMPTZ DEFAULT NOW(),
+completed_at        TIMESTAMPTZ          -- NULL until they reach Phase 9
+);
+-- What this tells me:
+-- • How many unique visitors total (COUNT *)
+-- • Completion rate (COUNT WHERE simulation_complete = TRUE / COUNT *)
+-- • Which country/city my audience is from
+-- • Which referrer source converts best (LinkedIn vs GitHub vs direct)
+-- • Average time to complete the simulation
+════════════════════════════════════════════════════════════════════════════════
+TABLE 2: phase_events
+PURPOSE: One row every time a user moves to a new phase.
+This is my funnel data — shows exactly where people drop off.
+════════════════════════════════════════════════════════════════════════════════
+CREATE TABLE phase_events (
+id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+session_token   TEXT NOT NULL REFERENCES sessions(session_token),
+phase_number    INTEGER NOT NULL,   -- 0 to 9
+phase_name      TEXT NOT NULL,      -- e.g. "kyc", "transfer", "swift_comparison"
+seconds_on_prev_phase  INTEGER,     -- How long they spent on the PREVIOUS phase
+entered_at      TIMESTAMPTZ DEFAULT NOW()
+);
+-- What this tells me:
+-- • Funnel: Phase 0 → 1 → 2 → ... → 9 (shows the exact drop-off point)
+-- • Which phase do people spend the most time on? (most engaging content)
+-- • Which phase do people exit fastest? (least engaging / confusing)
+-- Example query: SELECT phase_name, COUNT(*) FROM phase_events GROUP BY phase_name ORDER BY phase_number
+-- That gives me a bar chart of how many users reached each phase
+════════════════════════════════════════════════════════════════════════════════
+TABLE 3: use_case_events
+PURPOSE: One row every time a user selects a use case in Phase 5.
+Tells me which use case resonates most with my audience.
+════════════════════════════════════════════════════════════════════════════════
+CREATE TABLE use_case_events (
+id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+session_token   TEXT NOT NULL REFERENCES sessions(session_token),
+use_case_id     TEXT NOT NULL,    -- "ecommerce", "freelancer", "b2b", "remittance", "p2p"
+use_case_name   TEXT NOT NULL,    -- Human-readable label
+amount_usd      INTEGER NOT NULL, -- Transfer amount for that use case
+selected_at     TIMESTAMPTZ DEFAULT NOW()
+);
+-- What this tells me:
+-- • Which use case is most popular (COUNT by use_case_id)
+-- • % of users who try MORE than 1 use case (my PRD metric for engagement depth)
+-- • Does the use case choice correlate with the user's country?
+--   (e.g. Nigerian users pick Remittance, UK users pick Freelancer)
+-- Example query: SELECT use_case_id, COUNT(*) FROM use_case_events GROUP BY use_case_id
+════════════════════════════════════════════════════════════════════════════════
+TABLE 4: interaction_events
+PURPOSE: Tracks specific meaningful clicks that prove learning happened.
+Not every click — only the ones tied to PRD metrics.
+════════════════════════════════════════════════════════════════════════════════
+CREATE TABLE interaction_events (
+id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+session_token   TEXT NOT NULL REFERENCES sessions(session_token),
+event_type      TEXT NOT NULL,
+-- event_type values and what they mean:
+--  "wrong_network_clicked"    → User tested the wrong-address error (lesson landed!)
+--  "correct_address_used"     → User used the right address
+--  "network_selected_tron"    → User chose TRC-20 rail
+--  "network_selected_eth"     → User chose ERC-20 rail
+--  "transfer_confirmed"       → User clicked final confirm on transfer
+--  "offramp_initiated"        → User started the cash-out flow
+--  "offramp_completed"        → User saw the NIBSS NIP confirmation
+--  "history_filter_onchain"   → User filtered history to on-chain only
+--  "history_filter_offchain"  → User filtered history to off-chain only
+--  "simulation_restarted"     → User hit Restart (and from which phase)
+phase_number    INTEGER,          -- Which phase this happened in
+use_case_id     TEXT,             -- Relevant for transfer-related events
+meta            JSONB,            -- Any extra context (flexible, no schema change needed)
+-- Example meta values:
+--  wrong_network_clicked:   { "network": "TRON", "address_pasted": "0x..." }
+--  network_selected:        { "network": "ETH", "use_case": "freelancer" }
+--  simulation_restarted:    { "highest_phase_before_restart": 6 }
+occurred_at     TIMESTAMPTZ DEFAULT NOW()
+);
+-- What this tells me:
+-- • PRD metric: % who click Wrong Network button (target: >50% — it means the lesson landed)
+-- • Network rail preference: TRON vs ETH split
+-- • Do users who test the wrong address complete the simulation at a higher rate?
+--   (If yes: that interaction drives engagement. Keep it prominent.)
+-- • Restart rate and restart phase (tells me where people get confused)
+════════════════════════════════════════════════════════════════════════════════
+TABLE 5: leads
+PURPOSE: Stores email + professional profile of users who voluntarily
+identify themselves at Phase 9 (simulation completion).
+This is the most valuable table — these are warm, qualified leads
+who cared enough to complete the full simulation AND opt in.
+════════════════════════════════════════════════════════════════════════════════
+CREATE TABLE leads (
+id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+session_token   TEXT REFERENCES sessions(session_token),
+-- What they tell us
+email           TEXT UNIQUE NOT NULL,
+full_name       TEXT,
+role            TEXT,       -- e.g. "Product Manager", "Payments Engineer", "Founder"
+company         TEXT,       -- e.g. "Flutterwave", "Kora", "GTBank"
+linkedin_url    TEXT,
+-- What we already know from their session (pre-filled automatically)
+country         TEXT,
+use_cases_tried TEXT[],     -- Array of use case IDs they selected
+phases_completed INTEGER,   -- How many phases they went through
+-- Consent (legally required)
+consented_to_updates  BOOLEAN DEFAULT FALSE,  -- They ticked "keep me updated"
+consent_text          TEXT,   -- Exact text they agreed to (store this for compliance)
+consented_at          TIMESTAMPTZ,
+-- When
+submitted_at    TIMESTAMPTZ DEFAULT NOW()
+);
+-- What this tells me:
+-- • Who exactly is using this (roles, companies, seniority)
+-- • Which companies are paying attention to stablecoin education
+-- • Warm leads for any future product, course, newsletter, or consulting work
+-- • LinkedIn profiles to connect with directly
+════════════════════════════════════════════════════════════════════════════════
+API ENDPOINTS I NEED (Express.js)
+════════════════════════════════════════════════════════════════════════════════
+Please create the following REST API endpoints:
+POST /api/session/start
+Body: { session_token, referrer_url, utm_source, utm_medium, utm_campaign,
+country, city, device_type, browser }
+Action: INSERT into sessions. If session_token already exists, do nothing (upsert).
+Returns: { success: true }
+POST /api/session/update
+Body: { session_token, highest_phase, simulation_complete, total_time_seconds }
+Action: UPDATE sessions WHERE session_token = ?
+Returns: { success: true }
+POST /api/phase
+Body: { session_token, phase_number, phase_name, seconds_on_prev_phase }
+Action: INSERT into phase_events. Also UPDATE sessions.highest_phase if this
+phase_number is higher than the current value.
+Returns: { success: true }
+POST /api/usecase
+Body: { session_token, use_case_id, use_case_name, amount_usd }
+Action: INSERT into use_case_events
+Returns: { success: true }
+POST /api/interaction
+Body: { session_token, event_type, phase_number, use_case_id, meta }
+Action: INSERT into interaction_events
+Returns: { success: true }
+POST /api/lead
+Body: { session_token, email, full_name, role, company, linkedin_url,
+country, use_cases_tried, phases_completed,
+consented_to_updates, consent_text }
+Action: INSERT into leads. If email already exists, UPDATE the row.
+Returns: { success: true, message: "Lead saved" }
+GET /api/stats (optional — for a simple dashboard)
+Action: Returns aggregate counts:
+- total_sessions
+- completed_sessions
+- completion_rate_percent
+- use_case_breakdown (count per use_case_id)
+- top_referrer
+- total_leads
+Returns: JSON object with all the above
+NOTE: Protect this with a simple API key check so only you can access it.
+════════════════════════════════════════════════════════════════════════════════
+ENVIRONMENT VARIABLES NEEDED
+════════════════════════════════════════════════════════════════════════════════
+In Replit Secrets (not in code), set:
+DATABASE_URL        = (Replit provides this automatically when you add a database)
+STATS_API_KEY       = (make up a strong secret key, e.g. "nv_stats_xK9m2p...")
+The frontend also needs (in .env):
+REACT_APP_API_URL   = https://your-replit-app-url.replit.app
+REACT_APP_POSTHOG_KEY = (from posthog.com → Project Settings → API Keys)
+════════════════════════════════════════════════════════════════════════════════
+SUMMARY: WHAT EACH TABLE ANSWERS
+════════════════════════════════════════════════════════════════════════════════
+sessions          → How many visitors? Where from? How many completed?
+phase_events      → Where do people drop off? What's the most engaging phase?
+use_case_events   → Which use case resonates most? Do people try more than one?
+interaction_events→ Did the wrong-network lesson land? TRON vs ETH preference?
+leads             → Who are these people? What companies? What roles?
+Together these 5 tables answer every metric in the PRD — and give you a
+professional data asset you can show in interviews as evidence of
+metrics-driven product thinking.

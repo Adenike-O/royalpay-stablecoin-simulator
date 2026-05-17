@@ -1,4 +1,9 @@
 import { useState, useEffect } from "react";
+import {
+  trackSessionStart, trackPhase, trackUseCase,
+  trackInteraction, trackLead, trackSessionComplete,
+  useCasesTried,
+} from "./tracking";
 
 const T = {
   bg: "#07101E", card: "#0D1B2F", card2: "#111F38", border: "#162540",
@@ -552,7 +557,7 @@ function UseCaseSelector({ next, setUseCase }: { next: () => void; setUseCase: (
       <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 4 }}>Choose Your Scenario</div>
       <p style={{ fontSize: 12, color: T.dim, marginBottom: 14, lineHeight: 1.6 }}>Same USDT in your wallet. Five different real-world use cases. Pick one to simulate the full flow:</p>
       {USE_CASES.map(uc => (
-        <div key={uc.id} onClick={() => { setUseCase(uc); next(); }}
+        <div key={uc.id} onClick={() => { trackUseCase(uc.id, uc.title, uc.amount); setUseCase(uc); next(); }}
           onMouseEnter={() => setHovered(uc.id)} onMouseLeave={() => setHovered(null)}
           style={{ background: hovered === uc.id ? T.card2 : T.card, borderRadius: 12, padding: "12px 14px", marginBottom: 8, border: `1.5px solid ${hovered === uc.id ? uc.color : T.border}`, cursor: "pointer", transition: "all 0.18s" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -661,7 +666,7 @@ function Transfer({ next, useCase }: { next: () => void; useCase: typeof USE_CAS
         <FRow label="Est. Time" value={timeLabel[network!]} vColor={T.green} />
       </div>
       <Alert type="warn" text="This transaction is irreversible. Verify recipient and network before confirming." />
-      <Btn label={`Confirm — Send ${uc.amount} USDT`} onClick={() => setStep(3)} />
+      <Btn label={`Confirm — Send ${uc.amount} USDT`} onClick={() => { trackInteraction('transfer_confirmed', 6, uc.id, { network }); setStep(3); }} />
       <div style={{ marginTop: 8 }}><Btn label="← Back" onClick={() => setStep(1)} outline /></div>
     </div>
   );
@@ -675,10 +680,10 @@ function Transfer({ next, useCase }: { next: () => void; useCase: typeof USE_CAS
         placeholder={`Paste ${network} wallet address here`} error={addrErr} mono />
       {!addrErr && address.length > 10 && <Alert type="ok" text="✓ Valid address format detected." />}
       <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
-        <button onClick={() => { setAddress(sampleAddrs[network].ok); setAddrErr(""); }} style={{ flex: 1, background: T.green + "18", border: `1px solid ${T.green}40`, color: T.green, padding: "7px", borderRadius: 8, fontSize: 10, cursor: "pointer", fontWeight: 700 }}>
+        <button onClick={() => { trackInteraction('correct_address_used', 6, uc.id, { network }); setAddress(sampleAddrs[network].ok); setAddrErr(""); }} style={{ flex: 1, background: T.green + "18", border: `1px solid ${T.green}40`, color: T.green, padding: "7px", borderRadius: 8, fontSize: 10, cursor: "pointer", fontWeight: 700 }}>
           ✓ Correct Address
         </button>
-        <button onClick={() => { const a = sampleAddrs[network].bad; setAddress(a); setAddrErr(validateAddr(a)); }} style={{ flex: 1, background: T.red + "18", border: `1px solid ${T.red}40`, color: T.red, padding: "7px", borderRadius: 8, fontSize: 10, cursor: "pointer", fontWeight: 700 }}>
+        <button onClick={() => { const a = sampleAddrs[network].bad; const err = validateAddr(a); trackInteraction('wrong_network_clicked', 6, uc.id, { network, address_pasted: a }); setAddress(a); setAddrErr(err); }} style={{ flex: 1, background: T.red + "18", border: `1px solid ${T.red}40`, color: T.red, padding: "7px", borderRadius: 8, fontSize: 10, cursor: "pointer", fontWeight: 700 }}>
           ⚠ Wrong Network
         </button>
       </div>
@@ -702,7 +707,7 @@ function Transfer({ next, useCase }: { next: () => void; useCase: typeof USE_CAS
         { id: "TRON", token: "TRC-20", fee: "~$1 flat", time: "~2 min", badge: "Recommended", color: T.green, desc: "Fast and cheap. Best for most transfers under $10,000." },
         { id: "ETH", token: "ERC-20", fee: "$3-25 gas", time: "~15 min", badge: "Higher cost", color: T.amber, desc: "Slower, variable cost. Preferred for large institutional amounts." },
       ].map(n => (
-        <div key={n.id} onClick={() => { setNetwork(n.id); setStep(1); }}
+        <div key={n.id} onClick={() => { trackInteraction(n.id === 'TRON' ? 'network_selected_tron' : 'network_selected_eth', 6, uc.id, { network: n.id, use_case: uc.id }); setNetwork(n.id); setStep(1); }}
           style={{ background: T.card, borderRadius: 12, padding: "14px", marginBottom: 10, border: `1.5px solid ${T.border}`, cursor: "pointer", transition: "border-color 0.2s" }}
           onMouseEnter={e => (e.currentTarget.style.borderColor = n.color)}
           onMouseLeave={e => (e.currentTarget.style.borderColor = T.border)}>
@@ -766,7 +771,7 @@ function OffRamp({ next }: { next: () => void }) {
         <FRow label="Settlement" value="NIBSS NIP (<5 min)" vColor={T.teal} />
       </div>
       <Alert type="info" text="NIBSS NIP works 24/7 including weekends and public holidays. Funds typically arrive within 2-5 minutes." />
-      <Btn label="Confirm — Cash Out to Bank" onClick={() => { setLoading(true); setTimeout(() => { setLoading(false); setStep(2); }, 1000); }} disabled={loading} color={T.green} />
+      <Btn label="Confirm — Cash Out to Bank" onClick={() => { setLoading(true); setTimeout(() => { setLoading(false); trackInteraction('offramp_completed', 7); setStep(2); }, 1000); }} disabled={loading} color={T.green} />
     </div>
   );
 
@@ -785,7 +790,7 @@ function OffRamp({ next }: { next: () => void }) {
       </div>
       <Field label="Nigerian Bank Account" value="0123456789" readOnly />
       <Field label="Bank Name" value="GTBank" readOnly />
-      <Btn label="Review Cash Out →" onClick={() => setStep(1)} disabled={!amount || parseFloat(amount) <= 0} />
+      <Btn label="Review Cash Out →" onClick={() => { trackInteraction('offramp_initiated', 7, undefined, { amount_usdt: amount }); setStep(1); }} disabled={!amount || parseFloat(amount) <= 0} />
     </div>
   );
 }
@@ -807,7 +812,7 @@ function TxHistory({ next }: { next: () => void }) {
       <SecHead icon="📋" title="Transaction History" />
       <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
         {["All", "On-chain", "Off-chain"].map(f => (
-          <button key={f} onClick={() => setFilter(f)} style={{ background: filter === f ? T.teal + "22" : T.card, border: `1.5px solid ${filter === f ? T.teal : T.border}`, color: filter === f ? T.teal : T.dim, padding: "5px 11px", borderRadius: 8, fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>{f}</button>
+          <button key={f} onClick={() => { setFilter(f); if (f === 'On-chain') trackInteraction('history_filter_onchain', 8); else if (f === 'Off-chain') trackInteraction('history_filter_offchain', 8); }} style={{ background: filter === f ? T.teal + "22" : T.card, border: `1.5px solid ${filter === f ? T.teal : T.border}`, color: filter === f ? T.teal : T.dim, padding: "5px 11px", borderRadius: 8, fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>{f}</button>
         ))}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -840,7 +845,38 @@ function TxHistory({ next }: { next: () => void }) {
 
 // ── Phase 9: Compare ──────────────────────────────────────────────────────────
 
-function Compare({ restart }: { restart: () => void }) {
+function Compare({ restart, phasesCompleted }: { restart: () => void; phasesCompleted: number }) {
+  const [showLead, setShowLead] = useState(false);
+  const [leadEmail, setLeadEmail] = useState("");
+  const [leadName, setLeadName] = useState("");
+  const [leadRole, setLeadRole] = useState("");
+  const [leadCompany, setLeadCompany] = useState("");
+  const [leadLinkedin, setLeadLinkedin] = useState("");
+  const [consented, setConsented] = useState(false);
+  const [leadSent, setLeadSent] = useState(false);
+  const [leadLoading, setLeadLoading] = useState(false);
+
+  useEffect(() => {
+    trackSessionComplete(phasesCompleted, true);
+  }, []);
+
+  const submitLead = async () => {
+    if (!leadEmail || !consented) return;
+    setLeadLoading(true);
+    await trackLead({
+      email: leadEmail,
+      full_name: leadName,
+      role: leadRole,
+      company: leadCompany,
+      linkedin_url: leadLinkedin,
+      phases_completed: phasesCompleted,
+      consented_to_updates: consented,
+      consent_text: "I agree to receive updates about RoyalPay and stablecoin payment infrastructure.",
+    });
+    setLeadLoading(false);
+    setLeadSent(true);
+  };
+
   const rows = [
     { label: "Speed", swift: "1-3 business days", stable: "~2 min (TRC-20)", win: true },
     { label: "Cost", swift: "$25-50 + 5-7% FX", stable: "~$1 flat fee", win: true },
@@ -876,6 +912,38 @@ function Compare({ restart }: { restart: () => void }) {
         ))}
       </div>
       <Alert type="ok" text="Regulation is converging: US GENIUS Act (2025), EU MiCA, Nigeria CBN VASP licensing. Stablecoins are now as regulated as banks — but without 50 years of legacy inefficiency." />
+
+      {/* Lead Capture */}
+      {leadSent ? (
+        <div style={{ background: T.green + "15", border: `1px solid ${T.green}40`, borderRadius: 12, padding: "14px 16px", marginBottom: 12, textAlign: "center" }}>
+          <div style={{ fontSize: 20, marginBottom: 4 }}>🎉</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.green, marginBottom: 4 }}>You're on the list</div>
+          <div style={{ fontSize: 11, color: T.dim }}>We'll be in touch. Connect on LinkedIn too.</div>
+        </div>
+      ) : !showLead ? (
+        <div style={{ background: T.card, borderRadius: 12, padding: "14px 16px", marginBottom: 12, border: `1px solid ${T.border}` }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.txt, marginBottom: 4 }}>Stay in the loop</div>
+          <div style={{ fontSize: 11, color: T.dim, marginBottom: 10 }}>Building in payments or stablecoins? Leave your details and we'll keep you updated.</div>
+          <Btn label="Leave My Details →" onClick={() => setShowLead(true)} color={T.teal} />
+        </div>
+      ) : (
+        <div style={{ background: T.card, borderRadius: 12, padding: "14px 16px", marginBottom: 12, border: `1px solid ${T.teal}40` }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.txt, marginBottom: 12 }}>Your Details</div>
+          <Field label="Email *" value={leadEmail} onChange={setLeadEmail} placeholder="you@company.com" type="email" />
+          <Field label="Full Name" value={leadName} onChange={setLeadName} placeholder="Amaka Okonkwo" />
+          <Field label="Role" value={leadRole} onChange={setLeadRole} placeholder="Product Manager, Engineer, Founder..." />
+          <Field label="Company" value={leadCompany} onChange={setLeadCompany} placeholder="Flutterwave, GTBank..." />
+          <Field label="LinkedIn URL" value={leadLinkedin} onChange={setLeadLinkedin} placeholder="linkedin.com/in/..." />
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 12 }}>
+            <input type="checkbox" id="consent" checked={consented} onChange={e => setConsented(e.target.checked)} style={{ marginTop: 2, accentColor: T.teal, flexShrink: 0 }} />
+            <label htmlFor="consent" style={{ fontSize: 10, color: T.dim, lineHeight: 1.6, cursor: "pointer" }}>
+              I agree to receive updates about RoyalPay and stablecoin payment infrastructure.
+            </label>
+          </div>
+          <Btn label={leadLoading ? "Saving..." : "Submit"} onClick={submitLead} disabled={!leadEmail || !consented || leadLoading} color={T.teal} />
+        </div>
+      )}
+
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <Btn label="↺ Restart Simulation" onClick={restart} outline />
       </div>
@@ -885,12 +953,31 @@ function Compare({ restart }: { restart: () => void }) {
 
 // ── Main App ──────────────────────────────────────────────────────────────────
 
+const PHASE_NAMES = [
+  "welcome","signup","kyc","wallet_gen","buy_usdt",
+  "use_case_selector","transfer","offramp","tx_history","swift_comparison",
+];
+
 export default function App() {
   const [phase, setPhase] = useState(0);
   const [useCase, setUseCase] = useState<typeof USE_CASES[0] | null>(null);
 
-  const next = () => setPhase(p => Math.min(p + 1, 9));
-  const restart = () => { setPhase(0); setUseCase(null); };
+  useEffect(() => {
+    trackSessionStart().then(() => trackPhase(0, PHASE_NAMES[0]));
+  }, []);
+
+  const next = () => setPhase(p => {
+    const np = Math.min(p + 1, 9);
+    trackPhase(np, PHASE_NAMES[np]);
+    return np;
+  });
+
+  const restart = () => {
+    trackInteraction('simulation_restarted', phase, undefined, { highest_phase_before_restart: phase });
+    setPhase(0);
+    setUseCase(null);
+    trackPhase(0, PHASE_NAMES[0]);
+  };
 
   const screens = [
     <Welcome next={next} />,
@@ -902,7 +989,7 @@ export default function App() {
     <Transfer next={next} useCase={useCase} />,
     <OffRamp next={next} />,
     <TxHistory next={next} />,
-    <Compare restart={restart} />,
+    <Compare restart={restart} phasesCompleted={phase} />,
   ];
 
   return (
