@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   trackSessionStart, trackPhase, trackUseCase,
   trackInteraction, trackLead, trackSessionComplete,
@@ -74,6 +74,37 @@ function SecHead({ icon, title }: { icon: string; title: string }) {
       <span style={{ fontSize: 18 }}>{icon}</span>
       <span style={{ fontSize: 15, fontWeight: 800, color: T.txt }}>{title}</span>
     </div>
+  );
+}
+
+// ── Confetti ──────────────────────────────────────────────────────────────────
+
+function Confetti({ onDone }: { onDone?: () => void }) {
+  useEffect(() => {
+    if (!onDone) return;
+    const t = setTimeout(onDone, 3800);
+    return () => clearTimeout(t);
+  }, []);
+  const pieces = useMemo(() => Array.from({ length: 70 }, (_, i) => ({
+    id: i, x: Math.random() * 100,
+    color: [T.teal, T.amber, T.blue, T.red, T.purple, T.green][i % 6],
+    delay: Math.random() * 1200, dur: 2000 + Math.random() * 1600,
+    w: 5 + Math.random() * 8, h: 5 + Math.random() * 8, round: Math.random() > 0.5,
+  })), []);
+  return (
+    <>
+      <style>{`@keyframes rp-fall{0%{transform:translateY(-30px) rotate(0deg);opacity:1}80%{opacity:1}100%{transform:translateY(105vh) rotate(800deg);opacity:0}}`}</style>
+      <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', pointerEvents: 'none', zIndex: 9999, overflow: 'hidden' }}>
+        {pieces.map(p => (
+          <div key={p.id} style={{
+            position: 'absolute', left: `${p.x}%`, top: -30,
+            width: p.w, height: p.h, background: p.color,
+            borderRadius: p.round ? '50%' : '2px',
+            animation: `rp-fall ${p.dur}ms ${p.delay}ms ease-in forwards`,
+          }} />
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -389,10 +420,15 @@ function KYC({ next }: { next: () => void }) {
   const [verifying, setVerifying] = useState(false);
   const [bvn, setBvn] = useState("22012345678");
   const [done, setDone] = useState(false);
+  const [confettiOn, setConfettiOn] = useState(false);
 
   const doVerify = () => {
     setVerifying(true);
-    setTimeout(() => { setVerifying(false); if (step < 3) setStep(s => s + 1); else setDone(true); }, 1800);
+    setTimeout(() => {
+      setVerifying(false);
+      if (step < 3) setStep(s => s + 1);
+      else { setDone(true); setConfettiOn(true); }
+    }, 1800);
   };
 
   const kycSteps = [
@@ -404,6 +440,7 @@ function KYC({ next }: { next: () => void }) {
 
   if (done) return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", textAlign: "center" }}>
+      {confettiOn && <Confetti onDone={() => setConfettiOn(false)} />}
       <div style={{ fontSize: 34, marginBottom: 8 }}>🎉</div>
       <div style={{ fontSize: 15, fontWeight: 800, color: T.green, marginBottom: 6 }}>KYC Approved!</div>
       <Badge label="Tier 2 Verified · ₦2M/day limit" color={T.green} />
@@ -483,13 +520,24 @@ function BuyUSDT({ next }: { next: () => void }) {
   const [ngn, setNgn] = useState("83250");
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [method, setMethod] = useState<"bank" | "card" | "ussd">("bank");
+  const [confettiOn, setConfettiOn] = useState(false);
+  const [cardNum, setCardNum] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvv, setCardCvv] = useState("");
+  const [cardName, setCardName] = useState("");
+
   const rate = 1665;
   const gross = ngn ? (parseFloat(ngn) / rate).toFixed(2) : "0.00";
   const fee = (parseFloat(gross) * 0.015).toFixed(2);
   const net = (parseFloat(gross) - parseFloat(fee)).toFixed(2);
+  const ussdCode = `*770*${ngn}*0012345#`;
+
+  const goFunded = () => { setLoading(true); setTimeout(() => { setLoading(false); setConfettiOn(true); setStep(2); }, 1400); };
 
   if (step === 2) return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", textAlign: "center" }}>
+      {confettiOn && <Confetti onDone={() => setConfettiOn(false)} />}
       <div style={{ fontSize: 38, marginBottom: 8 }}>💰</div>
       <div style={{ fontSize: 22, fontWeight: 800, color: T.teal, marginBottom: 2 }}>+{net} USDT</div>
       <div style={{ fontSize: 12, color: T.dim, marginBottom: 20 }}>Credited to your RoyalPay wallet</div>
@@ -499,9 +547,58 @@ function BuyUSDT({ next }: { next: () => void }) {
         <FRow label="Platform Fee (1.5%)" value={`${fee} USDT`} vColor={T.amber} />
         <FRow label="USDT Credited" value={`${net} USDT`} vColor={T.teal} />
         <FRow label="Settlement" value="Internal ledger (instant)" vColor={T.green} />
+        <FRow label="Method" value={method === "bank" ? "Bank Transfer" : method === "card" ? "Debit / Credit Card" : "USSD"} />
       </div>
       <Badge label={`Wallet Balance: ${net} USDT`} color={T.teal} />
       <div style={{ marginTop: 20, width: "100%" }}><Btn label="Explore Use Cases →" onClick={next} /></div>
+    </div>
+  );
+
+  if (step === 1 && method === "card") return (
+    <div>
+      <SecHead icon="💳" title="Pay with Debit / Credit Card" />
+      <Alert type="info" text="Your card is charged in Naira. USDT is credited to your wallet instantly after authorisation." />
+      <Field label="Card Number" value={cardNum} onChange={v => setCardNum(v.replace(/\D/g, "").slice(0, 16))} placeholder="0000 0000 0000 0000" mono />
+      <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ flex: 1 }}><Field label="Expiry (MM/YY)" value={cardExpiry} onChange={v => {
+          const d = v.replace(/\D/g, "").slice(0, 4);
+          setCardExpiry(d.length > 2 ? d.slice(0, 2) + "/" + d.slice(2) : d);
+        }} placeholder="MM/YY" /></div>
+        <div style={{ width: 80 }}><Field label="CVV" value={cardCvv} onChange={v => setCardCvv(v.replace(/\D/g, "").slice(0, 4))} placeholder="•••" /></div>
+      </div>
+      <Field label="Name on Card" value={cardName} onChange={setCardName} placeholder="AMAKA OKONKWO" />
+      <div style={{ background: T.card, borderRadius: 10, padding: "12px 14px", marginBottom: 14 }}>
+        <FRow label="Amount to Charge" value={`₦${parseInt(ngn || "0").toLocaleString()}`} vColor={T.teal} />
+        <FRow label="You Receive" value={`${net} USDT`} vColor={T.green} />
+        <FRow label="3D Secure" value="Enabled ✓" vColor={T.green} />
+      </div>
+      <Alert type="warn" text="Demo mode: any 16-digit card number will work. Real cards are processed via Paystack." />
+      <Btn label={loading ? "Processing..." : `Pay ₦${parseInt(ngn || "0").toLocaleString()} →`}
+        onClick={goFunded}
+        disabled={loading || cardNum.length < 16 || !cardExpiry || cardCvv.length < 3 || !cardName} />
+      <div style={{ marginTop: 8 }}><Btn label="← Back" onClick={() => setStep(0)} outline /></div>
+    </div>
+  );
+
+  if (step === 1 && method === "ussd") return (
+    <div>
+      <SecHead icon="📱" title="Pay via USSD" />
+      <Alert type="info" text="Dial the code below from your registered bank phone. Works on 2G — no internet required." />
+      <div style={{ background: T.card, borderRadius: 14, padding: "20px 16px", textAlign: "center", marginBottom: 14, border: `1.5px solid ${T.teal}40` }}>
+        <div style={{ fontSize: 10, color: T.dim, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>Dial This Code Now</div>
+        <div style={{ fontSize: 22, fontWeight: 800, color: T.teal, fontFamily: '"Courier New", monospace', marginBottom: 6, letterSpacing: 1 }}>{ussdCode}</div>
+        <div style={{ fontSize: 10, color: T.dim }}>GTBank · Providus · Access · Zenith · UBA · First Bank</div>
+      </div>
+      <div style={{ background: T.card, borderRadius: 10, padding: "12px 14px", marginBottom: 14 }}>
+        <FRow label="Transfer Amount" value={`₦${parseInt(ngn || "0").toLocaleString()}`} vColor={T.teal} />
+        <FRow label="Beneficiary" value="RoyalPay / Account 0012345" />
+        <FRow label="You Receive" value={`${net} USDT`} vColor={T.green} />
+        <FRow label="Rate Lock Expires" value="10 minutes" vColor={T.amber} />
+      </div>
+      <Alert type="warn" text="After dialling, follow the USSD prompts and enter your bank PIN to authorise. Then tap confirm below." />
+      <Btn label={loading ? "Confirming payment..." : "I've Completed the USSD Transfer ✓"}
+        onClick={goFunded} disabled={loading} color={T.green} />
+      <div style={{ marginTop: 8 }}><Btn label="← Back" onClick={() => setStep(0)} outline /></div>
     </div>
   );
 
@@ -513,13 +610,17 @@ function BuyUSDT({ next }: { next: () => void }) {
         <FRow label="Bank Name" value="Providus Bank (via Paystack)" />
         <FRow label="Account Number" value="0012345678" mono />
         <FRow label="Account Name" value="RoyalPay / Amaka Okonkwo" />
-        <FRow label="Amount to Transfer" value={`₦${parseInt(ngn).toLocaleString()}`} vColor={T.teal} />
+        <FRow label="Amount to Transfer" value={`₦${parseInt(ngn || "0").toLocaleString()}`} vColor={T.teal} />
         <FRow label="You will receive" value={`${net} USDT`} vColor={T.green} />
       </div>
       <Alert type="warn" text="Rate locked for 10 minutes. Transfer the exact amount shown or the rate will be recalculated." />
-      <Btn label="I've Made the Transfer ✓" onClick={() => { setLoading(true); setTimeout(() => { setLoading(false); setStep(2); }, 1200); }} disabled={loading} />
+      <Btn label="I've Made the Transfer ✓" onClick={goFunded} disabled={loading} />
     </div>
   );
+
+  const methodIds: ("bank" | "card" | "ussd")[] = ["bank", "card", "ussd"];
+  const methodLabels = ["Bank Transfer", "Card", "USSD"];
+  const methodIcons = ["🏦", "💳", "📱"];
 
   return (
     <div>
@@ -538,12 +639,22 @@ function BuyUSDT({ next }: { next: () => void }) {
       <div style={{ marginBottom: 12 }}>
         <div style={{ fontSize: 10, color: T.dim, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Payment Method</div>
         <div style={{ display: "flex", gap: 6 }}>
-          {["Bank Transfer", "Card", "USSD"].map((m, i) => (
-            <div key={i} style={{ flex: 1, background: i === 0 ? T.teal + "18" : T.card, border: `1.5px solid ${i === 0 ? T.teal : T.border}`, borderRadius: 8, padding: "7px", textAlign: "center", cursor: "pointer", fontSize: 10, color: i === 0 ? T.teal : T.dim, fontWeight: 600 }}>{m}</div>
+          {methodIds.map((id, i) => (
+            <div key={id} onClick={() => setMethod(id)} style={{
+              flex: 1, background: method === id ? T.teal + "18" : T.card,
+              border: `1.5px solid ${method === id ? T.teal : T.border}`,
+              borderRadius: 8, padding: "8px 4px", textAlign: "center", cursor: "pointer",
+              fontSize: 9, color: method === id ? T.teal : T.dim, fontWeight: 700,
+              transition: "all 0.15s",
+            }}>
+              <div style={{ fontSize: 16, marginBottom: 3 }}>{methodIcons[i]}</div>
+              {methodLabels[i]}
+            </div>
           ))}
         </div>
       </div>
-      <Btn label={`Buy ${net} USDT →`} onClick={() => setStep(1)} disabled={!ngn || parseFloat(ngn) < 500} />
+      <Btn label={`Buy ${net} USDT via ${method === "bank" ? "Bank Transfer" : method === "card" ? "Card" : "USSD"} →`}
+        onClick={() => setStep(1)} disabled={!ngn || parseFloat(ngn) < 500} />
     </div>
   );
 }
@@ -586,6 +697,9 @@ function Transfer({ next, useCase }: { next: () => void; useCase: typeof USE_CAS
   const [addrErr, setAddrErr] = useState("");
   const [step, setStep] = useState(0);
   const [countdown, setCountdown] = useState(0);
+  const [confettiOn, setConfettiOn] = useState(false);
+
+  useEffect(() => { if (step === 4) setConfettiOn(true); }, [step]);
   const txHash = "a4f2c9e7b1d8f305a6e2b9c4f1a7e3d0b8c5f2a9e6d3";
 
   useEffect(() => {
@@ -618,6 +732,7 @@ function Transfer({ next, useCase }: { next: () => void; useCase: typeof USE_CAS
 
   if (step === 4) return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", textAlign: "center" }}>
+      {confettiOn && <Confetti onDone={() => setConfettiOn(false)} />}
       <div style={{ fontSize: 36, marginBottom: 8 }}>✅</div>
       <div style={{ fontSize: 15, fontWeight: 800, color: T.green, marginBottom: 4 }}>Transfer Confirmed!</div>
       <div style={{ fontSize: 20, fontWeight: 800, color: T.teal, marginBottom: 16 }}>{uc.amount} USDT Sent</div>
@@ -858,6 +973,7 @@ function Compare({ restart, phasesCompleted }: { restart: () => void; phasesComp
 
   useEffect(() => {
     trackSessionComplete(phasesCompleted, true);
+    setConfettiOn(true);
   }, []);
 
   const submitLead = async () => {

@@ -43,16 +43,18 @@ async function post(path: string, body: object): Promise<void> {
 
 export const sessionToken = getSessionToken();
 
-let sessionStarted = false;
+// Store the in-flight session start promise so StrictMode's double-invoke
+// awaits the same network call instead of firing a second phase before
+// the first session insert has committed.
+let sessionReadyPromise: Promise<void> | null = null;
 let sessionStartTime = Date.now();
 const phaseEnteredAt: Record<number, number> = {};
 export const useCasesTried: string[] = [];
 
 export async function trackSessionStart(): Promise<void> {
-  if (sessionStarted) return;
-  sessionStarted = true;
+  if (sessionReadyPromise) return sessionReadyPromise;
   sessionStartTime = Date.now();
-  await post('/session/start', {
+  sessionReadyPromise = post('/session/start', {
     session_token: sessionToken,
     referrer_url: document.referrer || null,
     utm_source: getUtmParam('utm_source'),
@@ -63,9 +65,13 @@ export async function trackSessionStart(): Promise<void> {
     device_type: getDeviceType(),
     browser: getBrowser(),
   });
+  return sessionReadyPromise;
 }
 
 export async function trackPhase(phaseNumber: number, phaseName: string): Promise<void> {
+  // Always wait for the session to exist before writing a phase event
+  if (sessionReadyPromise) await sessionReadyPromise;
+
   const now = Date.now();
   const prevPhase = phaseNumber - 1;
   const secondsOnPrev = phaseEnteredAt[prevPhase]
