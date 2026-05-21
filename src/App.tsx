@@ -272,46 +272,151 @@ const INFRA = [
 
 // ── Phone Frame ──────────────────────────────────────────────────────────────
 
-function PhoneFrame({ children, phase, total }: { children: React.ReactNode; phase: number; total: number }) {
-  const labels = ["Welcome","Sign Up","KYC","Wallet","Buy USDT","Use Cases","Transfer","Off-Ramp","History","Compare"];
+const NAV_STEPS = [
+  { label: "Home",        icon: "🏠", phase: 0 },
+  { label: "Sign Up",     icon: "📝", phase: 1 },
+  { label: "KYC Verify",  icon: "🪪", phase: 2 },
+  { label: "Wallet",      icon: "💼", phase: 3 },
+  { label: "Buy USDT",    icon: "💳", phase: 4 },
+  { label: "Use Cases",   icon: "🎯", phase: 5 },
+  { label: "Transfer",    icon: "📤", phase: 6 },
+  { label: "Off-Ramp",    icon: "💵", phase: 7 },
+  { label: "Tx History",  icon: "📋", phase: 8 },
+  { label: "Comparison",  icon: "📊", phase: 9 },
+];
+
+function PhoneFrame({ children, phase, total, onBack, onHome, onNavigate }: {
+  children: React.ReactNode; phase: number; total: number;
+  onBack: () => void; onHome: () => void; onNavigate: (p: number) => void;
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const current = NAV_STEPS[Math.min(phase, NAV_STEPS.length - 1)];
+
+  const handleNav = (p: number) => { setMenuOpen(false); onNavigate(p); };
+
   return (
-    <div style={{
-      width: 358, background: "#08121E", borderRadius: 36,
-      border: "2px solid #162438",
-      boxShadow: "0 30px 70px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05)",
-      display: "flex", flexDirection: "column", overflow: "hidden", height: 660,
-    }}>
-      {/* Status bar */}
-      <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 20px 6px", fontSize: 11, color: T.dim, background: "#07101C" }}>
-        <span style={{ fontWeight: 600 }}>9:41 AM</span>
-        <div style={{ display: "flex", gap: 5, alignItems: "center", fontSize: 10 }}>
-          <span>●●●●</span><span>WiFi</span><span>🔋</span>
+    <div style={{ position: "relative", width: 358, flexShrink: 0 }}>
+      {/* ── Phone shell ─────────────────────────────────────────────────── */}
+      <div style={{
+        width: 358, background: "#08121E", borderRadius: 36,
+        border: "2px solid #162438",
+        boxShadow: "0 30px 70px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05)",
+        display: "flex", flexDirection: "column", overflow: "hidden", height: 660,
+      }}>
+        {/* Status bar */}
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 20px 6px", fontSize: 11, color: T.dim, background: "#07101C" }}>
+          <span style={{ fontWeight: 600 }}>9:41 AM</span>
+          <div style={{ display: "flex", gap: 5, alignItems: "center", fontSize: 10 }}>
+            <span>●●●●</span><span>WiFi</span><span>🔋</span>
+          </div>
+        </div>
+        {/* URL bar */}
+        <div style={{ padding: "4px 16px 8px", background: "#07101C" }}>
+          <div style={{ background: T.card, borderRadius: 8, padding: "5px 11px", display: "flex", alignItems: "center", gap: 6, border: `1px solid ${T.border}` }}>
+            <span style={{ fontSize: 10, color: T.green }}>🔒</span>
+            <span style={{ fontSize: 10, color: T.dim }}>royalpay.app</span>
+            <span style={{ fontSize: 10, color: T.muted, marginLeft: "auto" }}>⟳</span>
+          </div>
+        </div>
+
+        {/* ── App header with nav ────────────────────────────────────────── */}
+        <div style={{ display: "flex", alignItems: "center", padding: "7px 12px 7px 10px", borderBottom: `1px solid ${T.border}`, gap: 6 }}>
+          {/* Back button */}
+          {phase > 0 ? (
+            <button onClick={onBack} title="Go back" style={{
+              background: "none", border: `1px solid ${T.border}`, color: T.teal,
+              cursor: "pointer", padding: "4px 9px", borderRadius: 8, fontSize: 15,
+              fontWeight: 700, display: "flex", alignItems: "center", lineHeight: 1,
+              fontFamily: "inherit", flexShrink: 0, transition: "all 0.15s",
+            }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = T.teal + "18"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "none"; }}
+            >‹</button>
+          ) : (
+            <div style={{ width: 32 }} />
+          )}
+
+          {/* Logo — always taps home */}
+          <button onClick={onHome} title="Back to home" style={{
+            background: "none", border: "none", cursor: "pointer",
+            display: "flex", alignItems: "center", gap: 6, flex: 1, padding: 0,
+          }}>
+            <div style={{ width: 26, height: 26, borderRadius: 7, background: `linear-gradient(135deg, ${T.teal}, #007A8F)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0 }}>♛</div>
+            <span style={{ fontSize: 15, fontWeight: 800, color: T.txt, letterSpacing: -0.3 }}>RoyalPay</span>
+          </button>
+
+          {/* Step menu button */}
+          <button onClick={() => setMenuOpen(m => !m)} style={{
+            background: menuOpen ? T.teal + "18" : T.card,
+            border: `1px solid ${menuOpen ? T.teal : T.border}`,
+            color: menuOpen ? T.teal : T.dim,
+            cursor: "pointer", padding: "5px 9px", borderRadius: 8,
+            display: "flex", alignItems: "center", gap: 5,
+            fontFamily: "inherit", flexShrink: 0, transition: "all 0.15s",
+          }}>
+            <span style={{ fontSize: 11 }}>{current.icon}</span>
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.3 }}>{current.label}</span>
+            <span style={{ fontSize: 8, color: menuOpen ? T.teal : T.muted }}>{menuOpen ? "▲" : "▼"}</span>
+          </button>
+        </div>
+
+        {/* Phase progress bar */}
+        <div style={{ display: "flex", gap: 2, padding: "0 16px 6px" }}>
+          {Array.from({ length: total }, (_, i) => (
+            <div key={i} style={{ flex: 1, height: 2, borderRadius: 2, background: i <= phase ? T.teal : T.muted, transition: "background 0.3s" }} />
+          ))}
+        </div>
+
+        {/* Content */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px 20px" }}>
+          {children}
         </div>
       </div>
-      {/* URL bar */}
-      <div style={{ padding: "4px 16px 8px", background: "#07101C" }}>
-        <div style={{ background: T.card, borderRadius: 8, padding: "5px 11px", display: "flex", alignItems: "center", gap: 6, border: `1px solid ${T.border}` }}>
-          <span style={{ fontSize: 10, color: T.green }}>🔒</span>
-          <span style={{ fontSize: 10, color: T.dim }}>royalpay.app</span>
-          <span style={{ fontSize: 10, color: T.muted, marginLeft: "auto" }}>⟳</span>
-        </div>
-      </div>
-      {/* App header */}
-      <div style={{ display: "flex", alignItems: "center", padding: "8px 16px", borderBottom: `1px solid ${T.border}`, gap: 8 }}>
-        <div style={{ width: 26, height: 26, borderRadius: 7, background: `linear-gradient(135deg, ${T.teal}, #007A8F)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0 }}>♛</div>
-        <span style={{ fontSize: 15, fontWeight: 800, color: T.txt, flex: 1, letterSpacing: -0.3 }}>RoyalPay</span>
-        <Badge label={labels[Math.min(phase, labels.length - 1)]} color={T.teal} />
-      </div>
-      {/* Phase progress bar */}
-      <div style={{ display: "flex", gap: 2, padding: "0 16px 6px" }}>
-        {Array.from({ length: total }, (_, i) => (
-          <div key={i} style={{ flex: 1, height: 2, borderRadius: 2, background: i <= phase ? T.teal : T.muted, transition: "background 0.3s" }} />
-        ))}
-      </div>
-      {/* Content */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px 20px" }}>
-        {children}
-      </div>
+
+      {/* ── Dropdown menu — rendered outside overflow:hidden ──────────────── */}
+      {menuOpen && (
+        <>
+          <div onClick={() => setMenuOpen(false)}
+            style={{ position: "fixed", inset: 0, zIndex: 40 }} />
+          <div style={{
+            position: "absolute", top: 113, left: 8, right: 8, zIndex: 50,
+            background: T.card2, border: `1px solid ${T.border}`,
+            borderRadius: 14, overflow: "hidden",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.7), 0 4px 16px rgba(0,0,0,0.4)",
+          }}>
+            {/* Header row */}
+            <div style={{ padding: "10px 14px 8px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: 9, fontWeight: 800, color: T.dim, letterSpacing: 1.2, textTransform: "uppercase" }}>Jump to Step</span>
+              <button onClick={() => setMenuOpen(false)} style={{ background: "none", border: "none", color: T.muted, cursor: "pointer", fontSize: 14, lineHeight: 1, fontFamily: "inherit" }}>✕</button>
+            </div>
+            {NAV_STEPS.map((step) => {
+              const active = phase === step.phase;
+              return (
+                <button key={step.phase} onClick={() => handleNav(step.phase)} style={{
+                  display: "flex", alignItems: "center", gap: 10, width: "100%",
+                  padding: "11px 14px",
+                  background: active ? T.teal + "18" : "transparent",
+                  border: "none",
+                  borderBottom: step.phase < 9 ? `1px solid ${T.border}` : "none",
+                  color: active ? T.teal : T.txt,
+                  cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+                  transition: "background 0.12s",
+                }}
+                  onMouseEnter={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = T.muted; }}
+                  onMouseLeave={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                >
+                  <div style={{ width: 28, height: 28, borderRadius: 8, background: active ? T.teal + "22" : T.muted, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>{step.icon}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: active ? 800 : 600, lineHeight: 1.2 }}>{step.label}</div>
+                    <div style={{ fontSize: 9, color: T.dim, marginTop: 1 }}>Phase {step.phase}</div>
+                  </div>
+                  {active && <div style={{ width: 6, height: 6, borderRadius: "50%", background: T.teal, flexShrink: 0 }} />}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -1101,11 +1206,19 @@ export default function App() {
     trackSessionStart().then(() => trackPhase(0, PHASE_NAMES[0]));
   }, []);
 
-  const next = () => setPhase(p => {
-    const np = Math.min(p + 1, 9);
+  const goTo = (p: number) => {
+    const target = Math.max(0, Math.min(p, 9));
+    trackInteraction('navigation', phase, undefined, { from: phase, to: target });
+    setPhase(target);
+    if (target < 5) setUseCase(null);
+    trackPhase(target, PHASE_NAMES[target]);
+  };
+
+  const next = () => {
+    const np = Math.min(phase + 1, 9);
     trackPhase(np, PHASE_NAMES[np]);
-    return np;
-  });
+    setPhase(np);
+  };
 
   const restart = () => {
     trackInteraction('simulation_restarted', phase, undefined, { highest_phase_before_restart: phase });
@@ -1136,7 +1249,11 @@ export default function App() {
     }}>
       {/* Phone */}
       <div style={{ width: 380, flexShrink: 0, display: "flex", justifyContent: "center", paddingRight: 8 }}>
-        <PhoneFrame phase={phase} total={10}>{screens[phase]}</PhoneFrame>
+        <PhoneFrame phase={phase} total={10}
+          onBack={() => goTo(phase - 1)}
+          onHome={() => goTo(0)}
+          onNavigate={goTo}
+        >{screens[phase]}</PhoneFrame>
       </div>
       {/* Infra Panel */}
       <div style={{ flex: 1, minWidth: 260, paddingTop: 4, overflowY: "auto" }}>
