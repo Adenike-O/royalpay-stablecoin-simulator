@@ -1076,6 +1076,7 @@ function Compare({ restart, phasesCompleted }: { restart: () => void; phasesComp
   const [consented, setConsented] = useState(false);
   const [leadSent, setLeadSent] = useState(false);
   const [leadLoading, setLeadLoading] = useState(false);
+  const [confettiOn, setConfettiOn] = useState(false);
 
   useEffect(() => {
     trackSessionComplete(phasesCompleted, true);
@@ -1110,6 +1111,7 @@ function Compare({ restart, phasesCompleted }: { restart: () => void; phasesComp
   ];
   return (
     <div>
+      {confettiOn && <Confetti onDone={() => setConfettiOn(false)} />}
       <SecHead icon="⚖️" title="SWIFT vs Stablecoin" />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
         {[{ l: "Faster", v: "1,000×", c: T.teal }, { l: "Cheaper", v: "~95%", c: T.green }, { l: "Available", v: "24/7", c: T.amber }, { l: "2025 Volume", v: "$33T", c: T.blue }].map((s, i) => (
