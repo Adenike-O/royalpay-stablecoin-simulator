@@ -383,12 +383,15 @@ function PhoneFrame({ children, phase, total, onBack, onHome, onNavigate }: {
             background: T.card2, border: `1px solid ${T.border}`,
             borderRadius: 14, overflow: "hidden",
             boxShadow: "0 20px 60px rgba(0,0,0,0.7), 0 4px 16px rgba(0,0,0,0.4)",
+            maxHeight: 300, display: "flex", flexDirection: "column",
           }}>
-            {/* Header row */}
-            <div style={{ padding: "10px 14px 8px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            {/* Header row — sticky */}
+            <div style={{ padding: "10px 14px 8px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
               <span style={{ fontSize: 9, fontWeight: 800, color: T.dim, letterSpacing: 1.2, textTransform: "uppercase" }}>Jump to Step</span>
               <button onClick={() => setMenuOpen(false)} style={{ background: "none", border: "none", color: T.muted, cursor: "pointer", fontSize: 14, lineHeight: 1, fontFamily: "inherit" }}>✕</button>
             </div>
+            {/* Scrollable list */}
+            <div style={{ overflowY: "auto", flex: 1 }}>
             {NAV_STEPS.map((step) => {
               const active = phase === step.phase;
               return (
@@ -414,6 +417,7 @@ function PhoneFrame({ children, phase, total, onBack, onHome, onNavigate }: {
                 </button>
               );
             })}
+            </div>
           </div>
         </>
       )}
