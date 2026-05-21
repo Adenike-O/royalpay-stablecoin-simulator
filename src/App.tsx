@@ -4,6 +4,7 @@ import {
   trackInteraction, trackLead, trackSessionComplete,
   useCasesTried,
 } from "./tracking";
+import StatsDashboard from "./StatsDashboard";
 
 const T = {
   bg: "#07101E", card: "#0D1B2F", card2: "#111F38", border: "#162540",
@@ -1077,6 +1078,24 @@ const PHASE_NAMES = [
 export default function App() {
   const [phase, setPhase] = useState(0);
   const [useCase, setUseCase] = useState<typeof USE_CASES[0] | null>(null);
+  const [dashGate, setDashGate] = useState(false);
+  const [dashOpen, setDashOpen] = useState(false);
+  const [dashKey, setDashKey] = useState("");
+  const [dashKeyInput, setDashKeyInput] = useState("");
+  const [dashErr, setDashErr] = useState("");
+  const [dashChecking, setDashChecking] = useState(false);
+
+  const openGate = () => { setDashGate(true); setDashErr(""); setDashKeyInput(""); };
+
+  const submitKey = async () => {
+    setDashChecking(true); setDashErr("");
+    try {
+      const res = await fetch("/api/stats", { headers: { "x-api-key": dashKeyInput } });
+      if (res.ok) { setDashKey(dashKeyInput); setDashGate(false); setDashOpen(true); }
+      else setDashErr("Invalid API key — access denied.");
+    } catch { setDashErr("Could not reach the server."); }
+    setDashChecking(false);
+  };
 
   useEffect(() => {
     trackSessionStart().then(() => trackPhase(0, PHASE_NAMES[0]));
@@ -1123,6 +1142,73 @@ export default function App() {
       <div style={{ flex: 1, minWidth: 260, paddingTop: 4, overflowY: "auto" }}>
         <InfraPanel data={INFRA[phase]} />
       </div>
+
+      {/* ── Analytics entry point ─────────────────────────────────────────── */}
+      <button onClick={openGate} style={{
+        position: "fixed", bottom: 18, right: 20, zIndex: 900,
+        background: T.card, border: `1px solid ${T.border}`,
+        color: T.dim, padding: "7px 14px", borderRadius: 20, fontSize: 10,
+        fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+        display: "flex", alignItems: "center", gap: 6,
+        transition: "all 0.2s", letterSpacing: 0.5,
+      }}
+        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = T.teal; (e.currentTarget as HTMLButtonElement).style.color = T.teal; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = T.border; (e.currentTarget as HTMLButtonElement).style.color = T.dim; }}
+      >
+        <span style={{ fontSize: 13 }}>📊</span> Analytics
+      </button>
+
+      {/* ── Password gate modal ───────────────────────────────────────────── */}
+      {dashGate && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 9999,
+          background: "rgba(3,11,22,0.92)", backdropFilter: "blur(8px)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }} onClick={e => { if (e.target === e.currentTarget) setDashGate(false); }}>
+          <div style={{
+            background: T.card, border: `1px solid ${T.border}`,
+            borderRadius: 20, padding: "36px 32px", width: 360, maxWidth: "90vw",
+            boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
+          }}>
+            <div style={{ textAlign: "center", marginBottom: 24 }}>
+              <div style={{ fontSize: 36, marginBottom: 8 }}>♛</div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: T.txt, marginBottom: 4 }}>RoyalPay Analytics</div>
+              <div style={{ fontSize: 12, color: T.dim }}>Enter your API key to access the internal dashboard</div>
+            </div>
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 10, color: T.dim, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>Stats API Key</div>
+              <input
+                type="password" value={dashKeyInput}
+                onChange={e => setDashKeyInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && !dashChecking && dashKeyInput && submitKey()}
+                placeholder="rp_stats_••••••••••••••••"
+                style={{
+                  width: "100%", padding: "11px 14px", background: "#0A1525",
+                  border: `1.5px solid ${dashErr ? T.red : T.border}`,
+                  borderRadius: 10, color: T.txt, fontSize: 13,
+                  fontFamily: '"Courier New", monospace', outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+              {dashErr && <div style={{ fontSize: 11, color: T.red, marginTop: 6 }}>⚠ {dashErr}</div>}
+            </div>
+            <button onClick={submitKey} disabled={!dashKeyInput || dashChecking} style={{
+              width: "100%", marginTop: 16, padding: "12px", background: T.teal,
+              border: "none", borderRadius: 10, color: "#061018", fontSize: 13,
+              fontWeight: 800, cursor: !dashKeyInput || dashChecking ? "not-allowed" : "pointer",
+              opacity: !dashKeyInput || dashChecking ? 0.5 : 1, fontFamily: "inherit",
+            }}>
+              {dashChecking ? "Verifying…" : "Open Dashboard →"}
+            </button>
+            <div style={{ textAlign: "center", marginTop: 14 }}>
+              <span onClick={() => setDashGate(false)} style={{ fontSize: 11, color: T.dim, cursor: "pointer", textDecoration: "underline" }}>Cancel</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Stats Dashboard overlay ───────────────────────────────────────── */}
+      {dashOpen && <StatsDashboard apiKey={dashKey} onClose={() => setDashOpen(false)} />}
     </div>
   );
 }

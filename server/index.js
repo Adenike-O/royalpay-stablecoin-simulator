@@ -149,7 +149,11 @@ app.get('/api/stats', async (req, res) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   try {
-    const [sessions, useCases, referrers, leads] = await Promise.all([
+    const [
+      summaryRes, leadsCountRes, totalInteractionsRes, totalUCRes,
+      funnelRes, usecasesRes, sourcesRes, devicesRes, browsersRes,
+      interactionsRes, daysRes, sessionsRes, leadsTableRes,
+    ] = await Promise.all([
       pool.query(`
         SELECT
           COUNT(*)::int AS total_sessions,
@@ -157,33 +161,143 @@ app.get('/api/stats', async (req, res) => {
           ROUND(
             COUNT(*) FILTER (WHERE simulation_complete)::numeric /
             NULLIF(COUNT(*), 0) * 100, 1
-          ) AS completion_rate_percent
+          ) AS completion_rate_percent,
+          ROUND(AVG(total_time_seconds) FILTER (WHERE total_time_seconds IS NOT NULL))::int AS avg_time_seconds,
+          ROUND(AVG(highest_phase)::numeric, 1) AS avg_highest_phase
         FROM sessions
       `),
+      pool.query(`SELECT COUNT(*)::int AS total FROM leads`),
+      pool.query(`SELECT COUNT(*)::int AS total FROM interaction_events`),
+      pool.query(`SELECT COUNT(*)::int AS total FROM use_case_events`),
       pool.query(`
-        SELECT use_case_id, COUNT(*)::int AS count
+        SELECT phase_number,
+               MAX(phase_name) AS phase_name,
+               COUNT(DISTINCT session_token)::int AS reached
+        FROM phase_events
+        GROUP BY phase_number
+        ORDER BY phase_number
+      `),
+      pool.query(`
+        SELECT use_case_id,
+               MAX(use_case_name) AS use_case_name,
+               COUNT(*)::int AS count
         FROM use_case_events
         GROUP BY use_case_id
         ORDER BY count DESC
       `),
       pool.query(`
-        SELECT COALESCE(utm_source, referrer_url, 'direct') AS source, COUNT(*)::int AS count
+        SELECT COALESCE(NULLIF(utm_source, ''), NULLIF(referrer_url, ''), 'direct') AS source,
+               COUNT(*)::int AS count
         FROM sessions
         GROUP BY source
         ORDER BY count DESC
-        LIMIT 1
+        LIMIT 10
       `),
-      pool.query(`SELECT COUNT(*)::int AS total_leads FROM leads`),
+      pool.query(`
+        SELECT COALESCE(device_type, 'unknown') AS device_type,
+               COUNT(*)::int AS count
+        FROM sessions
+        GROUP BY device_type
+        ORDER BY count DESC
+      `),
+      pool.query(`
+        SELECT COALESCE(browser, 'unknown') AS browser,
+               COUNT(*)::int AS count
+        FROM sessions
+        GROUP BY browser
+        ORDER BY count DESC
+      `),
+      pool.query(`
+        SELECT event_type, COUNT(*)::int AS count
+        FROM interaction_events
+        GROUP BY event_type
+        ORDER BY count DESC
+        LIMIT 12
+      `),
+      pool.query(`
+        SELECT gs.day::date AS day,
+               COALESCE(sub.cnt, 0)::int AS count
+        FROM generate_series(
+          (NOW() - INTERVAL '13 days')::date,
+          NOW()::date,
+          '1 day'::interval
+        ) AS gs(day)
+        LEFT JOIN (
+          SELECT DATE(started_at) AS d, COUNT(*)::int AS cnt
+          FROM sessions
+          GROUP BY d
+        ) sub ON sub.d = gs.day::date
+        ORDER BY gs.day
+      `),
+      pool.query(`
+        SELECT LEFT(session_token, 22) AS token_short,
+               COALESCE(device_type, '?') AS device_type,
+               COALESCE(browser, '?') AS browser,
+               highest_phase,
+               simulation_complete,
+               total_time_seconds,
+               TO_CHAR(started_at AT TIME ZONE 'UTC', 'MM-DD HH24:MI') AS started_at
+        FROM sessions
+        ORDER BY started_at DESC
+        LIMIT 25
+      `),
+      pool.query(`
+        SELECT email,
+               COALESCE(full_name, '—') AS full_name,
+               COALESCE(role, '—') AS role,
+               COALESCE(company, '—') AS company,
+               COALESCE(phases_completed, 0) AS phases_completed,
+               consented_to_updates,
+               TO_CHAR(submitted_at AT TIME ZONE 'UTC', 'MM-DD HH24:MI') AS submitted_at
+        FROM leads
+        ORDER BY submitted_at DESC
+      `),
     ]);
 
-    const s = sessions.rows[0];
+    const s = summaryRes.rows[0];
+    const totalSessions = s.total_sessions;
+    const totalUCEvents = totalUCRes.rows[0].total;
+
+    const addPct = (rows, totalKey) => rows.map(r => ({
+      ...r,
+      pct: totalKey > 0 ? Math.round(r.count / totalKey * 100) : 0,
+    }));
+
     res.json({
-      total_sessions: s.total_sessions,
-      completed_sessions: s.completed_sessions,
-      completion_rate_percent: parseFloat(s.completion_rate_percent) || 0,
-      use_case_breakdown: Object.fromEntries(useCases.rows.map(r => [r.use_case_id, r.count])),
-      top_referrer: referrers.rows[0]?.source ?? 'direct',
-      total_leads: leads.rows[0].total_leads,
+      summary: {
+        total_sessions: totalSessions,
+        completed_sessions: s.completed_sessions,
+        completion_rate_percent: parseFloat(s.completion_rate_percent) || 0,
+        avg_time_seconds: s.avg_time_seconds || 0,
+        avg_highest_phase: parseFloat(s.avg_highest_phase) || 0,
+        total_leads: leadsCountRes.rows[0].total,
+        total_use_case_events: totalUCEvents,
+        total_interactions: totalInteractionsRes.rows[0].total,
+      },
+      phase_funnel: funnelRes.rows.map(r => ({
+        ...r,
+        pct: totalSessions > 0 ? Math.round(r.reached / totalSessions * 100) : 0,
+      })),
+      use_cases: addPct(usecasesRes.rows, totalUCEvents),
+      traffic_sources: sourcesRes.rows.map(r => ({
+        ...r,
+        pct: totalSessions > 0 ? Math.round(r.count / totalSessions * 100) : 0,
+      })),
+      devices: devicesRes.rows.map(r => ({
+        ...r,
+        pct: totalSessions > 0 ? Math.round(r.count / totalSessions * 100) : 0,
+      })),
+      browsers: browsersRes.rows.map(r => ({
+        ...r,
+        pct: totalSessions > 0 ? Math.round(r.count / totalSessions * 100) : 0,
+      })),
+      interactions: interactionsRes.rows,
+      sessions_per_day: daysRes.rows.map(r => ({
+        day: (r.day instanceof Date ? r.day.toISOString() : String(r.day)).slice(5, 10),
+        count: r.count,
+      })),
+      recent_sessions: sessionsRes.rows,
+      leads: leadsTableRes.rows,
     });
   } catch (err) {
     console.error('stats error:', err.message);
