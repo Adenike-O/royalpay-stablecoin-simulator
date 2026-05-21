@@ -1,13 +1,13 @@
 # royalpay-stablecoin-simulator
-> **A fully interactive, browser-based prototype simulating the end-to-end flow of a stablecoin payment — from KYC onboarding to NIBSS settlement.**
+> **A fully interactive, browser-based prototype simulating the end-to-end flow of a stablecoin payment f,rom KYC onboarding to NIBSS settlement.**
 > Built to bridge the understanding gap between traditional finance operators and modern blockchain payment infrastructure.
 ## Why This Exists
 
-Stablecoins processed **$33 trillion in volume in 2025** — surpassing Visa and Mastercard combined. Yet a majority of fintech professionals, banking operators, and payments product teams still struggle to concretely explain how a stablecoin moves from a customer's wallet to a supplier's bank account.
+Stablecoins processed **$33 trillion in volume in 2025**, surpassing Visa and Mastercard combined. Yet a majority of fintech professionals, banking operators, and payments product teams still struggle to concretely explain how a stablecoin moves from a customer's wallet to a supplier's bank account.
 
 This gap isn't about intelligence. It's about **experience**. People understand things they can feel and interact with, not things they read about.
 
-**RoyalPay closes that gap.** It is an interactive product prototype designed to give any finance or tech professional a hands-on, end-to-end experience of the stablecoin lifecycle — in under 10 minutes, with no wallet, no real money, and no blockchain knowledge required.
+**RoyalPay closes that gap.** It is an interactive product prototype designed to give any finance or tech professional a hands-on, end-to-end experience of the stablecoin lifecycle, in under 10 minutes, with no wallet, no real money, and no blockchain knowledge required.
 
 ### The Problem I Set Out to Solve
 
@@ -55,9 +55,9 @@ The same USDT infrastructure — five completely different real-world payment st
 | # | Use Case | Scenario | Amount |
 |---|---|---|---|
 | 🛒 | **E-commerce** | Amaka's Nigerian debit card keeps getting declined buying a US Figma course | $50 |
-| 💼 | **Freelancer Invoice** | London agency pays Nigerian freelancer — SWIFT would take 5 days and deduct $45 | $200 |
+| 💼 | **Freelancer Invoice** | London agency pays Nigerian freelancer, SWIFT would take 5 days and deduct $45 | $200 |
 | 🏭 | **B2B Supplier Payment** | Fashion label pays Ghanaian fabric supplier before tomorrow's shipment deadline | $500 |
-| ❤️ | **Family Remittance** | UK-based cousin sends Mum money in Ibadan — no Western Union queues, no 7% cut | $100 |
+| ❤️ | **Family Remittance** | UK-based cousin sends Mum money in Ibadan, no Western Union queues, no 7% cut | $100 |
 | 🤝 | **P2P Bill Split** | Splitting coworking space fees when Nigerian bank transfers are down for maintenance | $25 |
 
 ---
@@ -111,7 +111,7 @@ The app runs on `http://localhost:3000`
 
 1. Fork this repo into your Replit account
 2. Replit auto-detects the React config
-3. Click **Run** — your live URL is instantly shareable
+3. Click **Run**, your live URL is instantly shareable
 ---
 
 ## AI Transparency — How Claude Was Used
