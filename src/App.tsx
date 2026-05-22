@@ -431,20 +431,18 @@ function InfraPanel({ data }: { data: typeof INFRA[0] | null }) {
   if (!data) return null;
   const alertC: Record<string, string> = { info: T.blue, warn: T.amber, err: T.red, ok: T.green };
   return (
-    <div style={{ flex: 1, minWidth: 260, paddingLeft: 28, display: "flex", flexDirection: "column" }}>
-      <div style={{ marginBottom: 8 }}><Badge label={data.badge} color={T.teal} /></div>
-      <div style={{ fontSize: 17, fontWeight: 800, color: T.txt, marginBottom: 6 }}>{data.title}</div>
-      <p style={{ fontSize: 12, color: T.dim, lineHeight: 1.7, marginBottom: 20 }}>{data.intro}</p>
+    <div style={{ display: "flex", flexDirection: "column" }}>
+      <p style={{ fontSize: 13, color: T.dim, lineHeight: 1.8, marginBottom: 20, marginTop: 0 }}>{data.intro}</p>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {data.points.map((p, i) => (
-          <div key={i} style={{ background: T.card, borderRadius: 12, padding: "12px 16px", borderLeft: `3px solid ${p.color}` }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: p.color, letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 4 }}>{p.label}</div>
-            <div style={{ fontSize: 12, color: T.txt, lineHeight: 1.7 }}>{p.text}</div>
+          <div key={i} style={{ background: T.bg, borderRadius: 12, padding: "14px 16px", borderLeft: `3px solid ${p.color}` }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: p.color, letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 5 }}>{p.label}</div>
+            <div style={{ fontSize: 13, color: T.txt, lineHeight: 1.75 }}>{p.text}</div>
           </div>
         ))}
       </div>
       {data.note && (
-        <div style={{ marginTop: 14, background: alertC[data.note.type] + "15", border: `1px solid ${alertC[data.note.type]}40`, borderRadius: 12, padding: "12px 16px", fontSize: 12, color: alertC[data.note.type], lineHeight: 1.7 }}>
+        <div style={{ marginTop: 14, background: alertC[data.note.type] + "15", border: `1px solid ${alertC[data.note.type]}40`, borderRadius: 12, padding: "14px 16px", fontSize: 13, color: alertC[data.note.type], lineHeight: 1.75 }}>
           {data.note.text}
         </div>
       )}
@@ -1195,6 +1193,15 @@ export default function App() {
   const [dashKeyInput, setDashKeyInput] = useState("");
   const [dashErr, setDashErr] = useState("");
   const [dashChecking, setDashChecking] = useState(false);
+  const [infraOpen, setInfraOpen] = useState(false);
+  const [infraPulse, setInfraPulse] = useState(true);
+
+  useEffect(() => {
+    setInfraOpen(false);
+    setInfraPulse(true);
+    const t = setTimeout(() => setInfraPulse(false), 2500);
+    return () => clearTimeout(t);
+  }, [phase]);
 
   const openGate = () => { setDashGate(true); setDashErr(""); setDashKeyInput(""); };
 
@@ -1246,24 +1253,138 @@ export default function App() {
     <Compare restart={restart} phasesCompleted={phase} />,
   ];
 
+  const infraData = INFRA[phase];
+
   return (
     <div style={{
-      display: "flex", flexWrap: "wrap", minHeight: "100vh",
-      background: T.bg, color: T.txt,
+      minHeight: "100vh", background: T.bg, color: T.txt,
       fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
-      padding: 20, gap: 0, boxSizing: "border-box", alignItems: "flex-start",
+      display: "flex", alignItems: "flex-start", justifyContent: "center",
+      padding: "28px 20px", boxSizing: "border-box",
     }}>
-      {/* Phone */}
-      <div style={{ width: 380, flexShrink: 0, display: "flex", justifyContent: "center", paddingRight: 8 }}>
+      {/* CSS for pulse animation */}
+      <style>{`
+        @keyframes rp-pulse-ring {
+          0% { box-shadow: 0 0 0 0 ${T.teal}55; }
+          70% { box-shadow: 0 0 0 10px ${T.teal}00; }
+          100% { box-shadow: 0 0 0 0 ${T.teal}00; }
+        }
+        @keyframes rp-tab-bounce {
+          0%, 100% { transform: translateX(0); }
+          40% { transform: translateX(5px); }
+        }
+      `}</style>
+
+      {/* Phone + trigger tab wrapper */}
+      <div style={{ position: "relative", flexShrink: 0 }}>
         <PhoneFrame phase={phase} total={10}
           onBack={() => goTo(phase - 1)}
           onHome={() => goTo(0)}
           onNavigate={goTo}
         >{screens[phase]}</PhoneFrame>
+
+        {/* ── Infra trigger tab ── */}
+        {infraData && !infraOpen && (
+          <button
+            onClick={() => { setInfraOpen(true); setInfraPulse(false); }}
+            title="See how this works under the hood"
+            style={{
+              position: "absolute", left: "calc(100% + 12px)", top: 100,
+              background: T.card, border: `1.5px solid ${infraPulse ? T.teal : T.border}`,
+              borderRadius: 14, padding: "14px 16px",
+              cursor: "pointer", fontFamily: "inherit",
+              display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6,
+              width: 170, textAlign: "left",
+              boxShadow: infraPulse
+                ? `0 4px 20px ${T.teal}30, 0 0 0 0 ${T.teal}55`
+                : "0 2px 12px rgba(0,0,0,0.08)",
+              animation: infraPulse ? "rp-pulse-ring 1.4s ease-out infinite" : "none",
+              transition: "border-color 0.3s, box-shadow 0.3s",
+            }}
+          >
+            {/* New-content dot */}
+            {infraPulse && (
+              <span style={{
+                position: "absolute", top: -5, right: -5,
+                width: 11, height: 11, borderRadius: "50%",
+                background: T.teal, border: `2px solid ${T.bg}`,
+                display: "block",
+              }} />
+            )}
+            <span style={{ fontSize: 16 }}>🏗</span>
+            <div>
+              <div style={{ fontSize: 9, fontWeight: 800, color: T.teal, letterSpacing: 1, textTransform: "uppercase", marginBottom: 3 }}>
+                {infraData.badge}
+              </div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: T.txt, lineHeight: 1.4 }}>
+                See what's powering this
+              </div>
+            </div>
+            <div style={{
+              fontSize: 10, color: T.teal, fontWeight: 700,
+              display: "flex", alignItems: "center", gap: 4,
+              animation: infraPulse ? "rp-tab-bounce 1.2s ease-in-out infinite" : "none",
+            }}>
+              Open panel <span>→</span>
+            </div>
+          </button>
+        )}
       </div>
-      {/* Infra Panel */}
-      <div style={{ flex: 1, minWidth: 260, paddingTop: 4, overflowY: "auto" }}>
-        <InfraPanel data={INFRA[phase]} />
+
+      {/* ── Drawer backdrop ────────────────────────────────────────────────── */}
+      <div
+        onClick={() => setInfraOpen(false)}
+        style={{
+          position: "fixed", inset: 0, zIndex: 800,
+          background: "rgba(17,24,39,0.22)", backdropFilter: "blur(2px)",
+          opacity: infraOpen ? 1 : 0,
+          pointerEvents: infraOpen ? "auto" : "none",
+          transition: "opacity 0.3s ease",
+        }}
+      />
+
+      {/* ── Infra drawer ───────────────────────────────────────────────────── */}
+      <div style={{
+        position: "fixed", top: 0, right: 0, bottom: 0, zIndex: 801,
+        width: 440, maxWidth: "88vw",
+        background: T.card, borderLeft: `1px solid ${T.border}`,
+        boxShadow: "-12px 0 48px rgba(0,0,0,0.1)",
+        transform: infraOpen ? "translateX(0)" : "translateX(100%)",
+        transition: "transform 0.38s cubic-bezier(0.4, 0, 0.2, 1)",
+        display: "flex", flexDirection: "column", overflowY: "auto",
+      }}>
+        {/* Drawer header — sticky */}
+        {infraData && (
+          <>
+            <div style={{
+              padding: "22px 24px 16px",
+              borderBottom: `1px solid ${T.border}`,
+              display: "flex", alignItems: "flex-start", justifyContent: "space-between",
+              position: "sticky", top: 0, background: T.card, zIndex: 1,
+            }}>
+              <div>
+                <Badge label={infraData.badge} color={T.teal} />
+                <div style={{ fontSize: 17, fontWeight: 800, color: T.txt, marginTop: 8, lineHeight: 1.3 }}>
+                  {infraData.title}
+                </div>
+              </div>
+              <button
+                onClick={() => setInfraOpen(false)}
+                style={{
+                  background: T.bg, border: `1px solid ${T.border}`,
+                  color: T.dim, cursor: "pointer", width: 32, height: 32,
+                  borderRadius: 8, fontSize: 15, display: "flex",
+                  alignItems: "center", justifyContent: "center",
+                  fontFamily: "inherit", flexShrink: 0, marginLeft: 12, marginTop: 2,
+                }}
+              >✕</button>
+            </div>
+            {/* Drawer body */}
+            <div style={{ padding: "22px 24px 32px", flex: 1 }}>
+              <InfraPanel data={infraData} />
+            </div>
+          </>
+        )}
       </div>
 
       {/* ── Analytics entry point ─────────────────────────────────────────── */}
