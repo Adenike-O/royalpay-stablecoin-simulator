@@ -7,9 +7,9 @@ import {
 import StatsDashboard from "./StatsDashboard";
 
 const T = {
-  bg: "#07101E", card: "#0D1B2F", card2: "#111F38", border: "#162540",
-  teal: "#00D4AA", amber: "#F5A623", red: "#FF3B55", green: "#27AE60",
-  blue: "#4A9EFF", purple: "#8B5CF6", txt: "#D0E8F5", dim: "#587298", muted: "#1A2E48",
+  bg: "#F0F2F5", card: "#FFFFFF", card2: "#F7F8FA", border: "#DDE1E8",
+  teal: "#009B7D", amber: "#D4860A", red: "#D92B42", green: "#1E8A4A",
+  blue: "#2A7FD4", purple: "#6D3FC9", txt: "#111827", dim: "#5A6478", muted: "#E2E6ED",
 };
 
 // ── Reusable Components ─────────────────────────────────────────────────────
@@ -298,24 +298,24 @@ function PhoneFrame({ children, phase, total, onBack, onHome, onNavigate }: {
     <div style={{ position: "relative", width: 358, flexShrink: 0 }}>
       {/* ── Phone shell ─────────────────────────────────────────────────── */}
       <div style={{
-        width: 358, background: "#08121E", borderRadius: 36,
-        border: "2px solid #162438",
-        boxShadow: "0 30px 70px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05)",
+        width: 358, background: "#D4D8E0", borderRadius: 36,
+        border: "2px solid #B8BEC9",
+        boxShadow: "0 30px 70px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.6)",
         display: "flex", flexDirection: "column", overflow: "hidden", height: 660,
       }}>
         {/* Status bar */}
-        <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 20px 6px", fontSize: 11, color: T.dim, background: "#07101C" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 20px 6px", fontSize: 11, color: T.dim, background: "#D4D8E0" }}>
           <span style={{ fontWeight: 600 }}>9:41 AM</span>
           <div style={{ display: "flex", gap: 5, alignItems: "center", fontSize: 10 }}>
             <span>●●●●</span><span>WiFi</span><span>🔋</span>
           </div>
         </div>
         {/* URL bar */}
-        <div style={{ padding: "4px 16px 8px", background: "#07101C" }}>
+        <div style={{ padding: "4px 16px 8px", background: "#D4D8E0" }}>
           <div style={{ background: T.card, borderRadius: 8, padding: "5px 11px", display: "flex", alignItems: "center", gap: 6, border: `1px solid ${T.border}` }}>
             <span style={{ fontSize: 10, color: T.green }}>🔒</span>
             <span style={{ fontSize: 10, color: T.dim }}>royalpay.app</span>
-            <span style={{ fontSize: 10, color: T.muted, marginLeft: "auto" }}>⟳</span>
+            <span style={{ fontSize: 10, color: T.dim, marginLeft: "auto" }}>⟳</span>
           </div>
         </div>
 
@@ -382,7 +382,7 @@ function PhoneFrame({ children, phase, total, onBack, onHome, onNavigate }: {
             position: "absolute", top: 113, left: 8, right: 8, zIndex: 50,
             background: T.card2, border: `1px solid ${T.border}`,
             borderRadius: 14, overflow: "hidden",
-            boxShadow: "0 20px 60px rgba(0,0,0,0.7), 0 4px 16px rgba(0,0,0,0.4)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08)",
             maxHeight: 300, display: "flex", flexDirection: "column",
           }}>
             {/* Header row — sticky */}
@@ -1285,7 +1285,7 @@ export default function App() {
       {dashGate && (
         <div style={{
           position: "fixed", inset: 0, zIndex: 9999,
-          background: "rgba(3,11,22,0.92)", backdropFilter: "blur(8px)",
+          background: "rgba(17,24,39,0.55)", backdropFilter: "blur(8px)",
           display: "flex", alignItems: "center", justifyContent: "center",
         }} onClick={e => { if (e.target === e.currentTarget) setDashGate(false); }}>
           <div style={{
@@ -1306,7 +1306,7 @@ export default function App() {
                 onKeyDown={e => e.key === "Enter" && !dashChecking && dashKeyInput && submitKey()}
                 placeholder="rp_stats_••••••••••••••••"
                 style={{
-                  width: "100%", padding: "11px 14px", background: "#0A1525",
+                  width: "100%", padding: "11px 14px", background: T.bg,
                   border: `1.5px solid ${dashErr ? T.red : T.border}`,
                   borderRadius: 10, color: T.txt, fontSize: 13,
                   fontFamily: '"Courier New", monospace', outline: "none",
