@@ -425,25 +425,81 @@ function PhoneFrame({ children, phase, total, onBack, onHome, onNavigate }: {
   );
 }
 
+// ── TypeWriter ────────────────────────────────────────────────────────────────
+
+function TypeWriter({ text, delay = 0, speed = 6, resetKey }: {
+  text: string; delay?: number; speed?: number; resetKey?: string | number;
+}) {
+  const [shown, setShown] = useState(0);
+  const [active, setActive] = useState(false);
+
+  useEffect(() => {
+    setShown(0);
+    setActive(false);
+    const t = setTimeout(() => setActive(true), delay);
+    return () => clearTimeout(t);
+  }, [text, delay, resetKey]);
+
+  useEffect(() => {
+    if (!active || shown >= text.length) return;
+    const t = setTimeout(() => setShown(n => n + 1), speed);
+    return () => clearTimeout(t);
+  }, [active, shown, text, speed]);
+
+  const done = shown >= text.length;
+  return (
+    <span>
+      {text.slice(0, shown)}
+      {!done && (
+        <span style={{
+          display: "inline-block", width: 2, height: "0.9em",
+          background: "currentColor", verticalAlign: "text-bottom",
+          marginLeft: 1, opacity: 1,
+          animation: "rp-blink 0.7s step-end infinite",
+        }} />
+      )}
+    </span>
+  );
+}
+
 // ── Infra Panel ──────────────────────────────────────────────────────────────
 
-function InfraPanel({ data }: { data: typeof INFRA[0] | null }) {
+function InfraPanel({ data, openKey }: { data: typeof INFRA[0] | null; openKey?: string | number }) {
   if (!data) return null;
   const alertC: Record<string, string> = { info: T.blue, warn: T.amber, err: T.red, ok: T.green };
+  const SPD = 5;
+  const GAP = 180;
+  const introDelay = 0;
+  const introDur = data.intro.length * SPD + GAP;
+  const pointDelays = data.points.reduce<number[]>((acc, p, i) => {
+    const prev = i === 0 ? introDur : acc[i - 1] + data.points[i - 1].text.length * SPD + GAP;
+    acc.push(prev);
+    return acc;
+  }, []);
+  const noteDelay = data.points.length > 0
+    ? pointDelays[data.points.length - 1] + data.points[data.points.length - 1].text.length * SPD + GAP
+    : introDur;
+
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
-      <p style={{ fontSize: 13, color: T.dim, lineHeight: 1.8, marginBottom: 20, marginTop: 0 }}>{data.intro}</p>
+      <p style={{ fontSize: 13, color: T.dim, lineHeight: 1.8, marginBottom: 20, marginTop: 0 }}>
+        <TypeWriter text={data.intro} delay={introDelay} speed={SPD} resetKey={openKey} />
+      </p>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {data.points.map((p, i) => (
           <div key={i} style={{ background: T.bg, borderRadius: 12, padding: "14px 16px", borderLeft: `3px solid ${p.color}` }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: p.color, letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 5 }}>{p.label}</div>
-            <div style={{ fontSize: 13, color: T.txt, lineHeight: 1.75 }}>{p.text}</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: p.color, letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 5 }}>
+              <TypeWriter text={p.label} delay={pointDelays[i]} speed={3} resetKey={openKey} />
+            </div>
+            <div style={{ fontSize: 13, color: T.txt, lineHeight: 1.75 }}>
+              <TypeWriter text={p.text} delay={pointDelays[i] + p.label.length * 3 + 80} speed={SPD} resetKey={openKey} />
+            </div>
           </div>
         ))}
       </div>
       {data.note && (
         <div style={{ marginTop: 14, background: alertC[data.note.type] + "15", border: `1px solid ${alertC[data.note.type]}40`, borderRadius: 12, padding: "14px 16px", fontSize: 13, color: alertC[data.note.type], lineHeight: 1.75 }}>
-          {data.note.text}
+          <TypeWriter text={data.note.text} delay={noteDelay} speed={SPD} resetKey={openKey} />
         </div>
       )}
     </div>
@@ -1273,6 +1329,10 @@ export default function App() {
           0%, 100% { transform: translateX(0); }
           40% { transform: translateX(5px); }
         }
+        @keyframes rp-blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
+        }
       `}</style>
 
       {/* Phone + trigger tab wrapper */}
@@ -1381,7 +1441,7 @@ export default function App() {
             </div>
             {/* Drawer body */}
             <div style={{ padding: "22px 24px 32px", flex: 1 }}>
-              <InfraPanel data={infraData} />
+              <InfraPanel data={infraData} openKey={`${phase}-${infraOpen}`} />
             </div>
           </>
         )}
