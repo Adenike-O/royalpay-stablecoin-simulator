@@ -1,4 +1,7 @@
 # royalpay-stablecoin-simulator
+
+https://royalpay-stablecoin-simulator.netlify.app/
+
 > **A fully interactive, browser-based prototype simulating the end-to-end flow of a stablecoin payment f,rom KYC onboarding to NIBSS settlement.**
 > Built to bridge the understanding gap between traditional finance operators and modern blockchain payment infrastructure.
 ## Why This Exists
